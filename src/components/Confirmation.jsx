@@ -16,7 +16,6 @@ import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth'
 import PhoneIphoneIcon from '@mui/icons-material/PhoneIphone'
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutlined'
-import dayjs from 'dayjs'
 import {
   generateWhatsAppMessageMulti,
   generateWhatsAppLink,
