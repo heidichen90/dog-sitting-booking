@@ -54,6 +54,39 @@ export function generateWhatsAppLink(msg) {
   return `https://wa.me/?text=${encodeURIComponent(msg)}`
 }
 
+export function generateWhatsAppMessageMulti(bookings) {
+  if (!bookings.length) return ''
+  const { dogName, ownerName } = bookings[0]
+  const lines = [
+    `Hi ${ownerName}! 🐾`,
+    '',
+    bookings.length > 1
+      ? `Your ${bookings.length} bookings are confirmed:`
+      : 'Your booking is confirmed:',
+    `🐕 Dog: ${dogName}`,
+    '',
+  ]
+  bookings.forEach((b, i) => {
+    if (bookings.length > 1) lines.push(`— Booking ${i + 1} (${b.service}) —`)
+    else lines.push(`📋 Service: ${b.service}`)
+    lines.push(
+      `📅 Drop-off: ${formatDateTime(b.dropOff, b.timesTbd)}${b.timesTbd ? ' (time TBD)' : ''}`,
+      `📅 Pick-up: ${formatDateTime(b.pickUp, b.timesTbd)}${b.timesTbd ? ' (time TBD)' : ''}`,
+      `💷 Price: £${parseFloat(b.price).toFixed(2)}`,
+    )
+    if (b.pickupDropoff) lines.push('🚗 Pickup & drop-off service: included')
+    if (b.notes) lines.push(`📝 Notes: ${b.notes}`)
+    if (b.timesTbd) lines.push('⏰ Will confirm the exact time closer to the date')
+    lines.push('')
+  })
+  if (bookings.length > 1) {
+    const total = bookings.reduce((sum, b) => sum + parseFloat(b.price), 0)
+    lines.push(`💷 Total: £${total.toFixed(2)}`, '')
+  }
+  lines.push(`We look forward to looking after ${dogName}! 🐶`)
+  return lines.join('\n')
+}
+
 export function downloadICS(booking) {
   const title = `Dog Sitting – ${booking.dogName} (${booking.service})`
   const description = [
