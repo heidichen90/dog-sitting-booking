@@ -22,14 +22,10 @@ import {
   generateWhatsAppLink,
   generateGCalLink,
   downloadICS,
+  fmt,
 } from '../utils'
 
 const SERVICE_COLOR = { Boarding: 'warning', 'Day Care': 'success' }
-
-function fmt(iso, timeTbd = false) {
-  if (timeTbd) return `${dayjs(iso).format('ddd, D MMM YYYY')} (time TBD)`
-  return dayjs(iso).format('ddd, D MMM YYYY [at] h:mm A')
-}
 
 export default function Confirmation({ bookings, onNewBooking }) {
   const [copied, setCopied] = useState(false)
@@ -77,7 +73,7 @@ export default function Confirmation({ bookings, onNewBooking }) {
               <Box>
                 <Typography variant="body2">
                   {fmt(b.dropOff, b.timesTbd)}
-                  {b.service === 'Boarding' && ` → ${fmt(b.pickUp, b.timesTbd)}`}
+                  {` → ${fmt(b.pickUp, b.timesTbd)}`}
                 </Typography>
               </Box>
               <Chip label={b.service} size="small" color={SERVICE_COLOR[b.service] ?? 'default'} />

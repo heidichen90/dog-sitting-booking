@@ -113,6 +113,11 @@ export function generateWhatsAppMessageMulti(bookings) {
   return lines.join('\n')
 }
 
+export function fmt(iso, timeTbd = false) {
+  if (timeTbd) return `${dayjs(iso).format('ddd, D MMM YYYY')} (time TBD)`
+  return dayjs(iso).format('ddd, D MMM YYYY [at] h:mm A')
+}
+
 export function downloadICS(booking) {
   const title = `Dog Sitting – ${booking.dogName} (${booking.service})`
   const description = [

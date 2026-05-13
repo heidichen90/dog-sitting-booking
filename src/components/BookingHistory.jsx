@@ -11,16 +11,12 @@ import {
 import DeleteOutlineIcon from '@mui/icons-material/Delete'
 import PetsIcon from '@mui/icons-material/Pets'
 import dayjs from 'dayjs'
+import { fmt } from '../utils'
 
 const SERVICE_COLOR = {
   Boarding: 'warning',
   'Day Care': 'success',
   Walking: 'info',
-}
-
-function fmt(iso, timeTbd = false) {
-  if (timeTbd) return `${dayjs(iso).format('ddd, D MMM YYYY')} (time TBD)`
-  return dayjs(iso).format('ddd, D MMM YYYY [at] h:mm A')
 }
 
 export default function BookingHistory({ bookings, onDelete }) {
