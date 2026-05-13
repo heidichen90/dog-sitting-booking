@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import {
   Box,
+  Button,
   Card,
   CardContent,
   Checkbox,
@@ -8,7 +9,6 @@ import {
   Collapse,
   FormControlLabel,
   IconButton,
-  Link,
   Stack,
   TextField,
   Typography,
@@ -16,40 +16,27 @@ import {
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 import DeleteOutlineIcon from '@mui/icons-material/Delete'
+import ExpandLessIcon from '@mui/icons-material/ExpandLess'
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import dayjs from 'dayjs'
+import { deriveService, calcPrice, priceBreakdown } from '../utils'
 
 const SERVICE_COLOR = { Boarding: 'warning', 'Day Care': 'success' }
-
-function deriveService(dropOff, pickUp) {
-  if (!dropOff || !pickUp || !dayjs(dropOff).isValid() || !dayjs(pickUp).isValid()) return ''
-  const nights = dayjs(pickUp).startOf('day').diff(dayjs(dropOff).startOf('day'), 'day')
-  return nights === 0 ? 'Day Care' : 'Boarding'
-}
-
-function calcPrice(dropOff, pickUp, pickupDropoff) {
-  if (!dropOff || !pickUp || !dayjs(dropOff).isValid() || !dayjs(pickUp).isValid()) return null
-  const nights = dayjs(pickUp).startOf('day').diff(dayjs(dropOff).startOf('day'), 'day')
-  const base = nights === 0 ? 35 : nights * 40
-  return base + (pickupDropoff ? 15 : 0)
-}
-
-function priceBreakdown(dropOff, pickUp, pickupDropoff) {
-  if (!dropOff || !pickUp || !dayjs(dropOff).isValid() || !dayjs(pickUp).isValid()) return ''
-  const nights = dayjs(pickUp).startOf('day').diff(dayjs(dropOff).startOf('day'), 'day')
-  const parts = []
-  if (nights === 0) parts.push('Day care £35')
-  else parts.push(`${nights} night${nights > 1 ? 's' : ''} × £40`)
-  if (pickupDropoff) parts.push('pickup/drop-off +£15')
-  return parts.join(' · ')
-}
-
-export { deriveService, calcPrice }
 
 export default function BookingEntry({ entry, onChange, onRemove, index, errors = {} }) {
   const [notesOpen, setNotesOpen] = useState(false)
 
-  const set = (field) => (val) => onChange({ ...entry, [field]: val })
-  const setCheck = (field) => (e) => onChange({ ...entry, [field]: e.target.checked })
+  const handleChange = (field) => (val) => onChange({ ...entry, [field]: val })
+  const handleCheckChange = (field) => (e) => onChange({ ...entry, [field]: e.target.checked })
+  const handleTimesTbdChange = (e) => {
+    const tbd = e.target.checked
+    const updated = { ...entry, timesTbd: tbd }
+    if (tbd) {
+      if (updated.dropOff) updated.dropOff = dayjs(updated.dropOff).startOf('day')
+      if (updated.pickUp) updated.pickUp = dayjs(updated.pickUp).startOf('day')
+    }
+    onChange(updated)
+  }
   const setNotes = (e) => onChange({ ...entry, notes: e.target.value })
 
   const price = calcPrice(entry.dropOff, entry.pickUp, entry.pickupDropoff)
@@ -74,7 +61,7 @@ export default function BookingEntry({ entry, onChange, onRemove, index, errors 
             control={
               <Checkbox
                 checked={entry.timesTbd}
-                onChange={setCheck('timesTbd')}
+                onChange={handleTimesTbdChange}
                 size="small"
               />
             }
@@ -93,7 +80,7 @@ export default function BookingEntry({ entry, onChange, onRemove, index, errors 
               <DatePicker
                 label="Drop-off Date"
                 value={entry.dropOff}
-                onChange={set('dropOff')}
+                onChange={handleChange('dropOff')}
                 disablePast
                 slotProps={{
                   textField: {
@@ -108,7 +95,7 @@ export default function BookingEntry({ entry, onChange, onRemove, index, errors 
               <DateTimePicker
                 label="Drop-off Date & Time"
                 value={entry.dropOff}
-                onChange={set('dropOff')}
+                onChange={handleChange('dropOff')}
                 disablePast
                 slotProps={{
                   textField: {
@@ -124,7 +111,7 @@ export default function BookingEntry({ entry, onChange, onRemove, index, errors 
               <DatePicker
                 label="Pick-up Date"
                 value={entry.pickUp}
-                onChange={set('pickUp')}
+                onChange={handleChange('pickUp')}
                 disablePast
                 minDate={entry.dropOff ?? undefined}
                 slotProps={{
@@ -140,7 +127,7 @@ export default function BookingEntry({ entry, onChange, onRemove, index, errors 
               <DateTimePicker
                 label="Pick-up Date & Time"
                 value={entry.pickUp}
-                onChange={set('pickUp')}
+                onChange={handleChange('pickUp')}
                 disablePast
                 minDateTime={entry.dropOff ?? undefined}
                 slotProps={{
@@ -159,7 +146,7 @@ export default function BookingEntry({ entry, onChange, onRemove, index, errors 
             control={
               <Checkbox
                 checked={entry.pickupDropoff}
-                onChange={setCheck('pickupDropoff')}
+                onChange={handleCheckChange('pickupDropoff')}
                 size="small"
               />
             }
@@ -190,15 +177,15 @@ export default function BookingEntry({ entry, onChange, onRemove, index, errors 
           )}
 
           <Box>
-            <Link
-              component="button"
-              type="button"
-              variant="body2"
-              underline="hover"
+            <Button
+              variant="text"
+              size="small"
+              endIcon={notesOpen ? <ExpandLessIcon /> : <ExpandMoreIcon />}
               onClick={() => setNotesOpen((o) => !o)}
+              sx={{ p: 0, minWidth: 0, textTransform: 'none' }}
             >
-              {notesOpen ? 'Hide notes ▴' : 'Add notes ▾'}
-            </Link>
+              {notesOpen ? 'Hide notes' : 'Add notes'}
+            </Button>
             <Collapse in={notesOpen}>
               <TextField
                 label="Notes"
@@ -206,7 +193,7 @@ export default function BookingEntry({ entry, onChange, onRemove, index, errors 
                 rows={2}
                 fullWidth
                 size="small"
-                value={entry.notes}
+                value={entry.notes ?? ''}
                 onChange={setNotes}
                 placeholder="Feeding instructions, medical needs…"
                 sx={{ mt: 1 }}

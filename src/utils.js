@@ -1,5 +1,31 @@
 import dayjs from 'dayjs'
 
+export function deriveService(dropOff, pickUp) {
+  if (!dropOff || !pickUp || !dayjs(dropOff).isValid() || !dayjs(pickUp).isValid()) return ''
+  const nights = dayjs(pickUp).startOf('day').diff(dayjs(dropOff).startOf('day'), 'day')
+  if (nights < 0) return ''
+  return nights === 0 ? 'Day Care' : 'Boarding'
+}
+
+export function calcPrice(dropOff, pickUp, pickupDropoff) {
+  if (!dropOff || !pickUp || !dayjs(dropOff).isValid() || !dayjs(pickUp).isValid()) return null
+  const nights = dayjs(pickUp).startOf('day').diff(dayjs(dropOff).startOf('day'), 'day')
+  if (nights < 0) return null
+  const base = nights === 0 ? 35 : nights * 40
+  return base + (pickupDropoff ? 15 : 0)
+}
+
+export function priceBreakdown(dropOff, pickUp, pickupDropoff) {
+  if (!dropOff || !pickUp || !dayjs(dropOff).isValid() || !dayjs(pickUp).isValid()) return ''
+  const nights = dayjs(pickUp).startOf('day').diff(dayjs(dropOff).startOf('day'), 'day')
+  if (nights < 0) return ''
+  const parts = []
+  if (nights === 0) parts.push('Day care £35')
+  else parts.push(`${nights} night${nights > 1 ? 's' : ''} × £40`)
+  if (pickupDropoff) parts.push('pickup/drop-off +£15')
+  return parts.join(' · ')
+}
+
 export function formatDateTime(iso, timeTbd = false) {
   if (timeTbd) return dayjs(iso).format('ddd, D MMM YYYY')
   return dayjs(iso).format('ddd, D MMM YYYY [at] h:mm A')
