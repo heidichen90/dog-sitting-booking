@@ -20,10 +20,10 @@ export default function App() {
   const [confirmed, setConfirmed] = useState(null)
   const [bookings, setBookings] = useState(getBookings)
 
-  function handleSubmit(booking) {
-    saveBooking(booking)
+  function handleSubmit(bookings) {
+    bookings.forEach((b) => saveBooking(b))
     setBookings(getBookings())
-    setConfirmed(booking)
+    setConfirmed(bookings)
   }
 
   function handleNewBooking() {
@@ -64,7 +64,7 @@ export default function App() {
           {tab === 0 && (
             <Paper variant="outlined" sx={{ p: 3, borderRadius: 3 }}>
               {confirmed ? (
-                <Confirmation booking={confirmed} onNewBooking={handleNewBooking} />
+                <Confirmation bookings={confirmed} onNewBooking={handleNewBooking} />
               ) : (
                 <BookingForm onSubmit={handleSubmit} />
               )}
