@@ -23,7 +23,7 @@ import { deriveService, calcPrice, priceBreakdown } from '../utils'
 
 const SERVICE_COLOR = { Boarding: 'warning', 'Day Care': 'success' }
 
-export default function BookingEntry({ entry, onChange, onRemove, index, errors = {} }) {
+export default function BookingEntry({ entry, onChange, onRemove, index, errors = {}, dayRate, overnightRate }) {
   const [notesOpen, setNotesOpen] = useState(false)
 
   const handleChange = (field) => (val) => onChange({ ...entry, [field]: val })
@@ -39,7 +39,7 @@ export default function BookingEntry({ entry, onChange, onRemove, index, errors 
   }
   const setNotes = (e) => onChange({ ...entry, notes: e.target.value })
 
-  const price = calcPrice(entry.dropOff, entry.pickUp, entry.pickupDropoff)
+  const price = calcPrice(entry.dropOff, entry.pickUp, entry.pickupDropoff, dayRate, overnightRate)
   const service = deriveService(entry.dropOff, entry.pickUp)
 
   return (
@@ -170,7 +170,7 @@ export default function BookingEntry({ entry, onChange, onRemove, index, errors 
               )}
               {price !== null && (
                 <Typography variant="caption" color="text.secondary">
-                  {priceBreakdown(entry.dropOff, entry.pickUp, entry.pickupDropoff)}
+                  {priceBreakdown(entry.dropOff, entry.pickUp, entry.pickupDropoff, dayRate, overnightRate)}
                 </Typography>
               )}
             </Stack>
