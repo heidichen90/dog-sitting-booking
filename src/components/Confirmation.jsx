@@ -37,6 +37,7 @@ export default function Confirmation({ bookings, onNewBooking }) {
 
   return (
     <Box>
+      {/* Header */}
       <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 3 }}>
         <CheckCircleIcon color="success" fontSize="large" />
         <Typography variant="h6" fontWeight={700}>
@@ -48,9 +49,7 @@ export default function Confirmation({ bookings, onNewBooking }) {
       <Typography
         variant="overline"
         color="text.secondary"
-        fontWeight={700}
-        display="block"
-        mb={1}
+        sx={{ fontWeight: 700, display: 'block', mb: 1 }}
       >
         Summary
       </Typography>
@@ -99,9 +98,7 @@ export default function Confirmation({ bookings, onNewBooking }) {
       <Typography
         variant="overline"
         color="text.secondary"
-        fontWeight={700}
-        display="block"
-        mb={1}
+        sx={{ fontWeight: 700, display: 'block', mb: 1 }}
       >
         WhatsApp Confirmation Message
       </Typography>
@@ -144,9 +141,7 @@ export default function Confirmation({ bookings, onNewBooking }) {
       <Typography
         variant="overline"
         color="text.secondary"
-        fontWeight={700}
-        display="block"
-        mb={1}
+        sx={{ fontWeight: 700, display: 'block', mb: 1 }}
       >
         Add to Calendar
       </Typography>
@@ -154,7 +149,7 @@ export default function Confirmation({ bookings, onNewBooking }) {
         {bookings.map((b, i) => (
           <Box key={b.id}>
             {bookings.length > 1 && (
-              <Typography variant="caption" color="text.secondary" display="block" mb={0.5}>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
                 Booking {i + 1} — {fmt(b.dropOff, b.timesTbd)}
               </Typography>
             )}
@@ -186,12 +181,11 @@ export default function Confirmation({ bookings, onNewBooking }) {
         ))}
       </Stack>
 
+      {/* Start another booking */}
       <Typography
         variant="overline"
         color="text.secondary"
-        fontWeight={700}
-        display="block"
-        mb={1}
+        sx={{ fontWeight: 700, display: 'block', mb: 1 }}
       >
         New Booking
       </Typography>
@@ -199,6 +193,7 @@ export default function Confirmation({ bookings, onNewBooking }) {
         New Booking
       </Button>
 
+      {/* "Copied to clipboard" toast */}
       <Snackbar
         open={copied}
         autoHideDuration={2500}
