@@ -176,7 +176,7 @@ export default function BookingForm({ onSubmit }) {
         {entries.length > 1 && totalPrice > 0 && (
           <>
             <Divider />
-            <Stack direction="row" justifyContent="space-between" alignItems="center">
+            <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center' }} >
               <Typography variant="body2" color="text.secondary">
                 Total ({entries.length} bookings)
               </Typography>

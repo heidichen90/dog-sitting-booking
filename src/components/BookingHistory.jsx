@@ -43,11 +43,10 @@ export default function BookingHistory({ bookings, onDelete }) {
           <CardContent>
             <Stack
               direction="row"
-              justifyContent="space-between"
-              alignItems="flex-start"
+              sx={{ justifyContent: 'space-between', alignItems: 'flex-start' }}
             >
               <Box flex={1}>
-                <Stack direction="row" spacing={1} alignItems="center" mb={0.5}>
+                <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 0.5 }}>
                   <Typography variant="subtitle1" fontWeight={700}>
                     🐕 {b.dogName}
                   </Typography>
@@ -94,11 +93,14 @@ export default function BookingHistory({ bookings, onDelete }) {
 
             <Stack
               direction="row"
-              justifyContent="space-between"
-              alignItems="center"
-              mt={1.5}
-              pt={1.5}
-              sx={{ borderTop: '1px solid', borderColor: 'divider' }}
+              sx={{
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                mt: 1.5,
+                pt: 1.5,
+                borderTop: '1px solid',
+                borderColor: 'divider',
+              }}
             >
               <Typography variant="h6" fontWeight={700} color="primary">
                 £{parseFloat(b.price).toFixed(2)}

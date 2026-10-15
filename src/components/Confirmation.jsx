@@ -37,7 +37,7 @@ export default function Confirmation({ bookings, onNewBooking }) {
 
   return (
     <Box>
-      <Stack direction="row" spacing={1} alignItems="center" mb={3}>
+      <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 3 }}>
         <CheckCircleIcon color="success" fontSize="large" />
         <Typography variant="h6" fontWeight={700}>
           {bookings.length === 1 ? 'Booking Confirmed!' : `${bookings.length} Bookings Confirmed!`}
@@ -54,16 +54,20 @@ export default function Confirmation({ bookings, onNewBooking }) {
       >
         Summary
       </Typography>
-      <Stack spacing={1} mb={3}>
+      <Stack spacing={1} sx={{ mb: 3 }}>
         {bookings.map((b, i) => (
           <Stack
             key={b.id}
             direction="row"
-            justifyContent="space-between"
-            alignItems="center"
-            sx={{ py: 0.75, borderBottom: '1px solid', borderColor: 'divider' }}
+            sx={{
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              py: 0.75,
+              borderBottom: '1px solid',
+              borderColor: 'divider',
+            }}
           >
-            <Stack direction="row" spacing={1} alignItems="center">
+            <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
               {bookings.length > 1 && (
                 <Typography variant="body2" color="text.secondary" sx={{ minWidth: 20 }}>
                   {i + 1}.
@@ -83,7 +87,7 @@ export default function Confirmation({ bookings, onNewBooking }) {
           </Stack>
         ))}
         {bookings.length > 1 && (
-          <Stack direction="row" justifyContent="flex-end">
+          <Stack direction="row" sx={{ justifyContent: 'flex-end' }}>
             <Typography variant="subtitle1" fontWeight={700} color="primary">
               Total: £{total.toFixed(2)}
             </Typography>
@@ -119,7 +123,7 @@ export default function Confirmation({ bookings, onNewBooking }) {
           {msg}
         </Typography>
       </Paper>
-      <Stack direction="row" spacing={1.5} mb={4}>
+      <Stack direction="row" spacing={1.5} sx={{ mb: 4 }}>
         <Button variant="outlined" startIcon={<ContentCopyIcon />} onClick={handleCopy}>
           Copy
         </Button>
@@ -146,7 +150,7 @@ export default function Confirmation({ bookings, onNewBooking }) {
       >
         Add to Calendar
       </Typography>
-      <Stack spacing={1.5} mb={4}>
+      <Stack spacing={1.5} sx={{ mb: 4 }}>
         {bookings.map((b, i) => (
           <Box key={b.id}>
             {bookings.length > 1 && (

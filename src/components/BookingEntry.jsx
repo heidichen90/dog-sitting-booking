@@ -46,7 +46,7 @@ export default function BookingEntry({ entry, onChange, onRemove, index, errors 
     <Card variant="outlined" sx={{ borderRadius: 2 }}>
       <CardContent>
         <Stack spacing={2}>
-          <Stack direction="row" justifyContent="space-between" alignItems="center">
+          <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
             <Typography variant="subtitle2" fontWeight={700} color="text.secondary">
               Booking {index + 1}
             </Typography>
@@ -161,7 +161,7 @@ export default function BookingEntry({ entry, onChange, onRemove, index, errors 
           />
 
           {service && (
-            <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+            <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
               <Chip label={service} size="small" color={SERVICE_COLOR[service] ?? 'default'} />
               {price !== null && (
                 <Typography variant="body2" fontWeight={700}>
