@@ -18,7 +18,7 @@ function newEntry(index) {
     id: Date.now() + index,
     dropOff: null,
     pickUp: null,
-    timesTbd: false,
+    timesTbd: true,
     pickupDropoff: false,
     notes: '',
   }
