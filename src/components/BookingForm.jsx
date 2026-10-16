@@ -62,9 +62,9 @@ export default function BookingForm({ onSubmit }) {
       if (
         entry.dropOff &&
         entry.pickUp &&
-        !dayjs(entry.pickUp).isAfter(dayjs(entry.dropOff))
+        dayjs(entry.pickUp).isBefore(dayjs(entry.dropOff))
       )
-        err.pickUp = 'Must be after drop-off'
+        err.pickUp = 'Must be on or after drop-off'
       if (Object.keys(err).length) eErr[entry.id] = err
     })
 
