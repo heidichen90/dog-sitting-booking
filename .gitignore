@@ -23,8 +23,5 @@ dist-ssr
 *.sln
 *.sw?
 
-# Claude Code git worktrees
-.claude/worktrees/
-
 # Claude Code personal/local settings (not for the team)
 .claude/settings.local.json
