@@ -1,6 +1,10 @@
-import dayjs from "dayjs";
+import dayjs, { type Dayjs } from "dayjs";
+import type { Booking, Service } from "./types";
 
-export function deriveService(dropOff, pickUp) {
+export function deriveService(
+  dropOff: Dayjs | null,
+  pickUp: Dayjs | null
+): Service | "" {
   if (
     !dropOff ||
     !pickUp ||
@@ -16,12 +20,12 @@ export function deriveService(dropOff, pickUp) {
 }
 
 export function calcPrice(
-  dropOff,
-  pickUp,
-  pickupDropoff,
-  dayRate,
-  overnightRate
-) {
+  dropOff: Dayjs | null,
+  pickUp: Dayjs | null,
+  pickupDropoff: boolean,
+  dayRate: number | string,
+  overnightRate: number | string
+): number | null {
   if (
     !dropOff ||
     !pickUp ||
@@ -33,17 +37,18 @@ export function calcPrice(
     .startOf("day")
     .diff(dayjs(dropOff).startOf("day"), "day");
   if (nights < 0) return null;
-  const base = nights === 0 ? dayRate : nights * overnightRate;
+  const rate = nights === 0 ? Number(dayRate) : Number(overnightRate);
+  const base = nights === 0 ? rate : nights * rate;
   return base + (pickupDropoff ? 15 : 0);
 }
 
 export function priceBreakdown(
-  dropOff,
-  pickUp,
-  pickupDropoff,
-  dayRate,
-  overnightRate
-) {
+  dropOff: Dayjs | null,
+  pickUp: Dayjs | null,
+  pickupDropoff: boolean,
+  dayRate: number | string,
+  overnightRate: number | string
+): string {
   if (
     !dropOff ||
     !pickUp ||
@@ -55,7 +60,7 @@ export function priceBreakdown(
     .startOf("day")
     .diff(dayjs(dropOff).startOf("day"), "day");
   if (nights < 0) return "";
-  const parts = [];
+  const parts: string[] = [];
   if (nights === 0) parts.push(`Day care × £${dayRate}`);
   else
     parts.push(`${nights} night${nights > 1 ? "s" : ""} × £${overnightRate}`);
@@ -63,12 +68,12 @@ export function priceBreakdown(
   return parts.join(" · ");
 }
 
-export function formatDateTime(iso, timeTbd = false) {
+export function formatDateTime(iso: string, timeTbd = false): string {
   if (timeTbd) return dayjs(iso).format("ddd, D MMM YYYY");
   return dayjs(iso).format("ddd, D MMM YYYY [at] h:mm A");
 }
 
-export function generateWhatsAppMessage(booking) {
+export function generateWhatsAppMessage(booking: Booking): string {
   const tbd = booking.timesTbd;
   const lines = [
     `Hi ${booking.ownerName}! 🐾`,
@@ -82,7 +87,7 @@ export function generateWhatsAppMessage(booking) {
     `📅 Pick-up: ${formatDateTime(booking.pickUp, tbd)}${
       tbd ? " (time TBD)" : ""
     }`,
-    `💷 Price: £${parseFloat(booking.price).toFixed(2)}`,
+    `💷 Price: £${booking.price.toFixed(2)}`,
   ];
   if (booking.pickupDropoff)
     lines.push(`🚗 Pickup & drop-off service: included`);
@@ -95,9 +100,9 @@ export function generateWhatsAppMessage(booking) {
   return lines.join("\n");
 }
 
-export function generateGCalLink(booking) {
+export function generateGCalLink(booking: Booking): string {
   const title = `Dog Sitting – ${booking.dogName} (${booking.service})`;
-  let start, end;
+  let start: string, end: string;
   if (booking.timesTbd) {
     start = dayjs(booking.dropOff).format("YYYYMMDD");
     end = dayjs(booking.pickUp).add(1, "day").format("YYYYMMDD");
@@ -107,7 +112,7 @@ export function generateGCalLink(booking) {
   }
   const details = [
     `Owner: ${booking.ownerName}`,
-    `Price: £${parseFloat(booking.price).toFixed(2)}`,
+    `Price: £${booking.price.toFixed(2)}`,
     booking.timesTbd ? "Times to be confirmed" : "",
     booking.notes ? `Notes: ${booking.notes}` : "",
   ]
@@ -121,11 +126,11 @@ export function generateGCalLink(booking) {
   );
 }
 
-export function generateWhatsAppLink(msg) {
+export function generateWhatsAppLink(msg: string): string {
   return `https://wa.me/?text=${encodeURIComponent(msg)}`;
 }
 
-export function generateWhatsAppMessageMulti(bookings) {
+export function generateWhatsAppMessageMulti(bookings: Booking[]): string {
   if (!bookings.length) return "";
   const { dogName, ownerName } = bookings[0];
   const lines = [
@@ -147,7 +152,7 @@ export function generateWhatsAppMessageMulti(bookings) {
       `📅 Pick-up: ${formatDateTime(b.pickUp, b.timesTbd)}${
         b.timesTbd ? " (time TBD)" : ""
       }`,
-      `💷 Price: £${parseFloat(b.price).toFixed(2)}`
+      `💷 Price: £${b.price.toFixed(2)}`
     );
     if (b.pickupDropoff) lines.push("🚗 Pickup & drop-off service: included");
     if (b.notes) lines.push(`📝 Notes: ${b.notes}`);
@@ -156,29 +161,29 @@ export function generateWhatsAppMessageMulti(bookings) {
     lines.push("");
   });
   if (bookings.length > 1) {
-    const total = bookings.reduce((sum, b) => sum + parseFloat(b.price), 0);
+    const total = bookings.reduce((sum, b) => sum + b.price, 0);
     lines.push(`💷 Total: £${total.toFixed(2)}`, "");
   }
   lines.push(`We look forward to looking after ${dogName}! 🐶`);
   return lines.join("\n");
 }
 
-export function fmt(iso, timeTbd = false) {
+export function fmt(iso: string, timeTbd = false): string {
   if (timeTbd) return `${dayjs(iso).format("ddd, D MMM YYYY")} (time TBD)`;
   return dayjs(iso).format("ddd, D MMM YYYY [at] h:mm A");
 }
 
-export function downloadICS(booking) {
+export function downloadICS(booking: Booking): void {
   const title = `Dog Sitting – ${booking.dogName} (${booking.service})`;
   const description = [
     `Owner: ${booking.ownerName}`,
-    `Price: £${parseFloat(booking.price).toFixed(2)}`,
+    `Price: £${booking.price.toFixed(2)}`,
     booking.notes ? `Notes: ${booking.notes}` : "",
   ]
     .filter(Boolean)
     .join("\\n");
   const stamp = dayjs().format("YYYYMMDDTHHmm00");
-  let dtStart, dtEnd;
+  let dtStart: string, dtEnd: string;
   if (booking.timesTbd) {
     dtStart = `DTSTART;VALUE=DATE:${dayjs(booking.dropOff).format("YYYYMMDD")}`;
     dtEnd = `DTEND;VALUE=DATE:${dayjs(booking.pickUp)

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type SyntheticEvent } from 'react'
 import {
   AppBar,
   Box,
@@ -10,17 +10,18 @@ import {
   Typography,
 } from '@mui/material'
 import PetsIcon from '@mui/icons-material/Pets'
-import BookingForm from './components/BookingForm'
-import Confirmation from './components/Confirmation'
-import BookingHistory from './components/BookingHistory'
-import { getBookings, saveBooking, deleteBooking } from './storage'
+import BookingForm from './components/BookingForm.tsx'
+import Confirmation from './components/Confirmation.tsx'
+import BookingHistory from './components/BookingHistory.tsx'
+import { getBookings, saveBooking, deleteBooking } from './storage.ts'
+import type { Booking } from './types'
 
 export default function App() {
   const [tab, setTab] = useState(0)
-  const [confirmed, setConfirmed] = useState(null)
-  const [bookings, setBookings] = useState(getBookings)
+  const [confirmed, setConfirmed] = useState<Booking[] | null>(null)
+  const [bookings, setBookings] = useState<Booking[]>(getBookings)
 
-  function handleSubmit(bookings) {
+  function handleSubmit(bookings: Booking[]) {
     bookings.forEach((b) => saveBooking(b))
     setBookings(getBookings())
     setConfirmed(bookings)
@@ -30,7 +31,7 @@ export default function App() {
     setConfirmed(null)
   }
 
-  function handleDelete(id) {
+  function handleDelete(id: number) {
     deleteBooking(id)
     setBookings(getBookings())
   }
@@ -41,7 +42,7 @@ export default function App() {
         <Toolbar>
           <PetsIcon sx={{ mr: 1.5 }} />
           <Box>
-            <Typography variant="h6" fontWeight={700} lineHeight={1.2}>
+            <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
               DD PET CARE BOOKING
             </Typography>
           </Box>
@@ -52,7 +53,7 @@ export default function App() {
         sx={{ bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider' }}
       >
         <Container maxWidth="sm">
-          <Tabs value={tab} onChange={(_, v) => setTab(v)}>
+          <Tabs value={tab} onChange={(_: SyntheticEvent, v: number) => setTab(v)}>
             <Tab label="New Booking" />
             <Tab label={`History (${bookings.length})`} />
           </Tabs>

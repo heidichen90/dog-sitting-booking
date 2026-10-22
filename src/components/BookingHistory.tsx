@@ -11,18 +11,24 @@ import {
 import DeleteOutlineIcon from '@mui/icons-material/Delete'
 import PetsIcon from '@mui/icons-material/Pets'
 import dayjs from 'dayjs'
-import { fmt } from '../utils'
+import { fmt } from '../utils.ts'
+import type { Booking } from '../types'
 
-const SERVICE_COLOR = {
+const SERVICE_COLOR: Record<string, 'warning' | 'success' | 'info'> = {
   Boarding: 'warning',
   'Day Care': 'success',
   Walking: 'info',
 }
 
-export default function BookingHistory({ bookings, onDelete }) {
+interface BookingHistoryProps {
+  bookings: Booking[]
+  onDelete: (id: number) => void
+}
+
+export default function BookingHistory({ bookings, onDelete }: BookingHistoryProps) {
   if (!bookings.length) {
     return (
-      <Box textAlign="center" py={10} color="text.disabled">
+      <Box sx={{ textAlign: 'center', py: 10, color: 'text.disabled' }}>
         <PetsIcon sx={{ fontSize: 64, mb: 1 }} />
         <Typography variant="h6">No bookings yet</Typography>
         <Typography variant="body2">
@@ -45,9 +51,9 @@ export default function BookingHistory({ bookings, onDelete }) {
               direction="row"
               sx={{ justifyContent: 'space-between', alignItems: 'flex-start' }}
             >
-              <Box flex={1}>
+              <Box sx={{ flex: 1 }}>
                 <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 0.5 }}>
-                  <Typography variant="subtitle1" fontWeight={700}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
                     🐕 {b.dogName}
                   </Typography>
                   <Chip
@@ -102,8 +108,8 @@ export default function BookingHistory({ bookings, onDelete }) {
                 borderColor: 'divider',
               }}
             >
-              <Typography variant="h6" fontWeight={700} color="primary">
-                £{parseFloat(b.price).toFixed(2)}
+              <Typography variant="h6" color="primary" sx={{ fontWeight: 700 }}>
+                £{b.price.toFixed(2)}
               </Typography>
               <Typography variant="caption" color="text.disabled">
                 Booked {dayjs(b.createdAt).format('D MMM YYYY')}

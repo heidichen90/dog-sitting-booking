@@ -22,14 +22,23 @@ import {
   generateGCalLink,
   downloadICS,
   fmt,
-} from '../utils'
+} from '../utils.ts'
+import type { Booking } from '../types'
 
-const SERVICE_COLOR = { Boarding: 'warning', 'Day Care': 'success' }
+const SERVICE_COLOR: Record<string, 'warning' | 'success'> = {
+  Boarding: 'warning',
+  'Day Care': 'success',
+}
 
-export default function Confirmation({ bookings, onNewBooking }) {
+interface ConfirmationProps {
+  bookings: Booking[]
+  onNewBooking: () => void
+}
+
+export default function Confirmation({ bookings, onNewBooking }: ConfirmationProps) {
   const [copied, setCopied] = useState(false)
   const msg = generateWhatsAppMessageMulti(bookings)
-  const total = bookings.reduce((sum, b) => sum + parseFloat(b.price), 0)
+  const total = bookings.reduce((sum, b) => sum + b.price, 0)
 
   function handleCopy() {
     navigator.clipboard.writeText(msg).then(() => setCopied(true))
@@ -40,7 +49,7 @@ export default function Confirmation({ bookings, onNewBooking }) {
       {/* Header */}
       <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 3 }}>
         <CheckCircleIcon color="success" fontSize="large" />
-        <Typography variant="h6" fontWeight={700}>
+        <Typography variant="h6" sx={{ fontWeight: 700 }}>
           {bookings.length === 1 ? 'Booking Confirmed!' : `${bookings.length} Bookings Confirmed!`}
         </Typography>
       </Stack>
@@ -80,14 +89,14 @@ export default function Confirmation({ bookings, onNewBooking }) {
               </Box>
               <Chip label={b.service} size="small" color={SERVICE_COLOR[b.service] ?? 'default'} />
             </Stack>
-            <Typography variant="body2" fontWeight={700}>
-              £{parseFloat(b.price).toFixed(2)}
+            <Typography variant="body2" sx={{ fontWeight: 700 }}>
+              £{b.price.toFixed(2)}
             </Typography>
           </Stack>
         ))}
         {bookings.length > 1 && (
           <Stack direction="row" sx={{ justifyContent: 'flex-end' }}>
-            <Typography variant="subtitle1" fontWeight={700} color="primary">
+            <Typography variant="subtitle1" color="primary" sx={{ fontWeight: 700 }}>
               Total: £{total.toFixed(2)}
             </Typography>
           </Stack>

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ChangeEvent } from 'react'
 import {
   Box,
   Button,
@@ -18,17 +18,43 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 import DeleteOutlineIcon from '@mui/icons-material/Delete'
 import ExpandLessIcon from '@mui/icons-material/ExpandLess'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
-import dayjs from 'dayjs'
-import { deriveService, calcPrice, priceBreakdown } from '../utils'
+import dayjs, { type Dayjs } from 'dayjs'
+import { deriveService, calcPrice, priceBreakdown } from '../utils.ts'
+import type { BookingDraft, EntryFieldErrors } from '../types'
 
-const SERVICE_COLOR = { Boarding: 'warning', 'Day Care': 'success' }
+const SERVICE_COLOR: Record<string, 'warning' | 'success'> = {
+  Boarding: 'warning',
+  'Day Care': 'success',
+}
 
-export default function BookingEntry({ entry, onChange, onRemove, index, errors = {}, dayRate, overnightRate }) {
+interface BookingEntryProps {
+  entry: BookingDraft
+  onChange: (updated: BookingDraft) => void
+  onRemove: (() => void) | null
+  index: number
+  errors?: EntryFieldErrors
+  dayRate: number | string
+  overnightRate: number | string
+}
+
+export default function BookingEntry({
+  entry,
+  onChange,
+  onRemove,
+  index,
+  errors = {},
+  dayRate,
+  overnightRate,
+}: BookingEntryProps) {
   const [notesOpen, setNotesOpen] = useState(false)
 
-  const handleChange = (field) => (val) => onChange({ ...entry, [field]: val })
-  const handleCheckChange = (field) => (e) => onChange({ ...entry, [field]: e.target.checked })
-  const handleTimesTbdChange = (e) => {
+  const handleChange =
+    (field: 'dropOff' | 'pickUp') => (val: Dayjs | null) =>
+      onChange({ ...entry, [field]: val })
+  const handleCheckChange =
+    (field: 'pickupDropoff') => (e: ChangeEvent<HTMLInputElement>) =>
+      onChange({ ...entry, [field]: e.target.checked })
+  const handleTimesTbdChange = (e: ChangeEvent<HTMLInputElement>) => {
     const tbd = e.target.checked
     const updated = { ...entry, timesTbd: tbd }
     if (tbd) {
@@ -37,7 +63,7 @@ export default function BookingEntry({ entry, onChange, onRemove, index, errors 
     }
     onChange(updated)
   }
-  const setNotes = (e) => onChange({ ...entry, notes: e.target.value })
+  const setNotes = (e: ChangeEvent<HTMLInputElement>) => onChange({ ...entry, notes: e.target.value })
 
   const price = calcPrice(entry.dropOff, entry.pickUp, entry.pickupDropoff, dayRate, overnightRate)
   const service = deriveService(entry.dropOff, entry.pickUp)
@@ -47,7 +73,7 @@ export default function BookingEntry({ entry, onChange, onRemove, index, errors 
       <CardContent>
         <Stack spacing={2}>
           <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="subtitle2" fontWeight={700} color="text.secondary">
+            <Typography variant="subtitle2" color="text.secondary" sx={{ fontWeight: 700 }}>
               Booking {index + 1}
             </Typography>
             {onRemove && (
@@ -164,7 +190,7 @@ export default function BookingEntry({ entry, onChange, onRemove, index, errors 
             <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
               <Chip label={service} size="small" color={SERVICE_COLOR[service] ?? 'default'} />
               {price !== null && (
-                <Typography variant="body2" fontWeight={700}>
+                <Typography variant="body2" sx={{ fontWeight: 700 }}>
                   £{price.toFixed(2)}
                 </Typography>
               )}

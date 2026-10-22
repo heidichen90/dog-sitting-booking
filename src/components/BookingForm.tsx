@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ChangeEvent, type FormEvent } from 'react'
 import {
   Box,
   Button,
@@ -10,10 +10,17 @@ import {
 import AddIcon from '@mui/icons-material/Add'
 import PetsIcon from '@mui/icons-material/Pets'
 import dayjs from 'dayjs'
-import BookingEntry from './BookingEntry'
-import { deriveService, calcPrice } from '../utils'
+import BookingEntry from './BookingEntry.tsx'
+import { deriveService, calcPrice } from '../utils.ts'
+import type {
+  Booking,
+  BookingDraft,
+  EntryFieldErrors,
+  SharedBookingFields,
+  SharedFieldErrors,
+} from '../types'
 
-function newEntry(index) {
+function newEntry(index: number): BookingDraft {
   return {
     id: Date.now() + index,
     dropOff: null,
@@ -24,22 +31,26 @@ function newEntry(index) {
   }
 }
 
-const emptyShared = { dogName: '', ownerName: '', dayRate: 35, overnightRate: 40 }
+const emptyShared: SharedBookingFields = { dogName: '', ownerName: '', dayRate: 35, overnightRate: 40 }
 
-export default function BookingForm({ onSubmit }) {
-  const [shared, setShared] = useState(emptyShared)
-  const [entries, setEntries] = useState([newEntry(0)])
-  const [sharedErrors, setSharedErrors] = useState({})
-  const [entryErrors, setEntryErrors] = useState({})
+interface BookingFormProps {
+  onSubmit: (bookings: Booking[]) => void
+}
 
-  const setSharedField = (field) => (e) =>
+export default function BookingForm({ onSubmit }: BookingFormProps) {
+  const [shared, setShared] = useState<SharedBookingFields>(emptyShared)
+  const [entries, setEntries] = useState<BookingDraft[]>([newEntry(0)])
+  const [sharedErrors, setSharedErrors] = useState<SharedFieldErrors>({})
+  const [entryErrors, setEntryErrors] = useState<Record<number, EntryFieldErrors>>({})
+
+  const setSharedField = (field: keyof SharedBookingFields) => (e: ChangeEvent<HTMLInputElement>) =>
     setShared((s) => ({ ...s, [field]: e.target.value }))
 
-  function updateEntry(id, updated) {
+  function updateEntry(id: number, updated: BookingDraft) {
     setEntries((es) => es.map((e) => (e.id === id ? updated : e)))
   }
 
-  function removeEntry(id) {
+  function removeEntry(id: number) {
     setEntries((es) => es.filter((e) => e.id !== id))
   }
 
@@ -47,16 +58,18 @@ export default function BookingForm({ onSubmit }) {
     setEntries((es) => [...es, newEntry(es.length)])
   }
 
-  function validate() {
-    const sErr = {}
+  function validate(): { sErr: SharedFieldErrors; eErr: Record<number, EntryFieldErrors> } {
+    const sErr: SharedFieldErrors = {}
     if (!shared.dogName.trim()) sErr.dogName = 'Required'
     if (!shared.ownerName.trim()) sErr.ownerName = 'Required'
-    if(!shared.dayRate || isNaN(shared.dayRate) || shared.dayRate <= 0) sErr.dayRate = 'Must be a positive number'
-    if(!shared.overnightRate || isNaN(shared.overnightRate) || shared.overnightRate <= 0) sErr.overnightRate = 'Must be a positive number'
+    const dayRateNum = Number(shared.dayRate)
+    if (!shared.dayRate || isNaN(dayRateNum) || dayRateNum <= 0) sErr.dayRate = 'Must be a positive number'
+    const overnightRateNum = Number(shared.overnightRate)
+    if (!shared.overnightRate || isNaN(overnightRateNum) || overnightRateNum <= 0) sErr.overnightRate = 'Must be a positive number'
 
-    const eErr = {}
+    const eErr: Record<number, EntryFieldErrors> = {}
     entries.forEach((entry) => {
-      const err = {}
+      const err: EntryFieldErrors = {}
       if (!entry.dropOff || !dayjs(entry.dropOff).isValid()) err.dropOff = 'Required'
       if (!entry.pickUp || !dayjs(entry.pickUp).isValid()) err.pickUp = 'Required'
       if (
@@ -76,7 +89,7 @@ export default function BookingForm({ onSubmit }) {
     0,
   )
 
-  function handleSubmit(ev) {
+  function handleSubmit(ev: FormEvent<HTMLFormElement>) {
     ev.preventDefault()
     const { sErr, eErr } = validate()
     if (Object.keys(sErr).length || Object.keys(eErr).length) {
@@ -85,7 +98,7 @@ export default function BookingForm({ onSubmit }) {
       return
     }
     const now = new Date().toISOString()
-    const bookings = entries.map((entry, i) => ({
+    const bookings: Booking[] = entries.map((entry, i) => ({
       id: Date.now() + i,
       dogName: shared.dogName.trim(),
       ownerName: shared.ownerName.trim(),
@@ -180,7 +193,7 @@ export default function BookingForm({ onSubmit }) {
               <Typography variant="body2" color="text.secondary">
                 Total ({entries.length} bookings)
               </Typography>
-              <Typography variant="h6" fontWeight={700} color="primary">
+              <Typography variant="h6" color="primary" sx={{ fontWeight: 700 }}>
                 £{totalPrice.toFixed(2)}
               </Typography>
             </Stack>
