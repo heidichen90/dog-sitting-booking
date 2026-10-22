@@ -2,9 +2,9 @@
 
 ## Project context
 
-A dog-sitting booking app for a sole-trader business. Currently React + Vite frontend only (no backend, no auth). Being developed as a learning project for an 8-week AI-enabled full-stack engineer curriculum, targeting bank engineering roles.
+A dog-sitting booking app for a sole-trader business. Currently React + Vite frontend only (no backend, no auth).
 
-**Heidi is the spec owner and reviewer; Claude is the coding agent.** All architectural decisions are made together — Claude proposes options with trade-offs, Heidi decides.
+**The project owner is the spec owner and reviewer; Claude is the coding agent.** All architectural decisions are made together — Claude proposes options with trade-offs, the project owner decides.
 
 ## Current stack
 
@@ -12,7 +12,6 @@ A dog-sitting booking app for a sole-trader business. Currently React + Vite fro
 - **TypeScript version:** pinned to `5.9.3`, not latest (`7.x`) — `typescript-eslint` doesn't support TS 7 yet. Re-check this pin before bumping TypeScript.
 - **Deployed:** Vercel (frontend only), auto-deploys on push to `main`
 - **Persistence:** localStorage (temporary; being replaced by backend)
-- **Calendar/date convention:** British — week starts Monday, dates display as DD/MM/YYYY (`adapterLocale="en-gb"` in `main.tsx`)
 - **Booking submission:** one form submit can create multiple bookings at once (shared dog/owner/rates, one `BookingEntry` per stay) — `onSubmit` always receives an array, even for a single booking
 
 ## Planned additions (weeks 1–2)
@@ -26,8 +25,7 @@ A dog-sitting booking app for a sole-trader business. Currently React + Vite fro
 
 ### Before writing any code
 - Read the relevant files first and summarise what you find.
-- For schema or architecture decisions: walk through the options and trade-offs and wait for Heidi's choice before writing migrations or code.
-- Propose a plan and get explicit approval before implementing anything non-trivial.
+- For schema or architecture decisions: walk through the options and trade-offs and wait for the project owner's choice before writing migrations or code.
 
 ### While writing code
 - Write tests and run them; report results and any remaining risks.
