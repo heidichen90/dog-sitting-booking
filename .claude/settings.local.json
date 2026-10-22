@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(grep -E \"^DeleteOutline\\\\.js$|^AddCircleOutline\\\\.js$\")",
-      "Bash(curl -s http://localhost:5173/)",
-      "Bash(npm run *)"
-    ]
-  }
-}
