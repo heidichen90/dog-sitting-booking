@@ -26,7 +26,7 @@ Replace the frontend's localStorage `Booking` records with a relational schema. 
 | Availability | `blocked_dates` ranges; the API warns on overlap and never refuses | The owner decides capacity |
 | Status | `confirmed` / `cancelled` on bookings and stays; no hard deletes | Keeps history; `draft` can be added later for the LLM phase |
 | Payments | `paid_at` timestamp on the booking; no payments table | Paid once per group, no partial payments |
-| Client details | Name + optional phone | Phone opens the right WhatsApp chat (free `wa.me` link) and supports future message matching |
+| Client details | Name + optional phone, enforced in international format | Phone opens the right WhatsApp chat (free `wa.me` link) and supports future message matching; one canonical format makes uniqueness meaningful |
 | Dog details | Name only | YAGNI |
 | Dates and times | Separate `date` and nullable `time` columns; a null time means "time TBD" | Replaces `timesTbd`; avoids clock-change and browser-timezone drift for a single-timezone business |
 | Service type | Not stored. Derived: 0 nights = Day Care, ≥1 night = Boarding | Can't disagree with the dates |
@@ -42,7 +42,7 @@ All timestamps are `timestamptz`. Every table has `created_at timestamptz not nu
 |---|---|---|---|
 | `id` | bigint identity | no | PK |
 | `name` | text | no | Check: not blank (`btrim(name) <> ''`) |
-| `phone` | text | yes | Unique when set. The format (e.g. `+447…`) is validated in the API |
+| `phone` | text | yes | Unique when set. Check: international E.164 format (`^\+[1-9][0-9]{7,14}$`, e.g. `+447700900001`). The API converts typed numbers into this form |
 
 ### `dogs`
 
@@ -52,7 +52,7 @@ All timestamps are `timestamptz`. Every table has `created_at timestamptz not nu
 | `client_id` | bigint | no | FK → `clients(id)` |
 | `name` | text | no | Check: not blank |
 
-- Unique `(client_id, name)`: a client can't have two dogs with the same name.
+- Unique index on `(client_id, lower(btrim(name)))`: a client can't have two dogs with the same name, ignoring case and surrounding spaces ("Bella" = " bella ").
 - Unique `(id, client_id)`: the target of the composite FK from `bookings`.
 
 ### `bookings`
@@ -109,7 +109,7 @@ Checks:
 
 FK columns only. Primary keys and unique constraints are indexed automatically.
 
-- `dogs(client_id)`: covered by the unique `(client_id, name)` index, so no separate index is needed.
+- `dogs(client_id)`: covered by the unique `(client_id, lower(btrim(name)))` index, so no separate index is needed.
 - `bookings(client_id)`
 - `bookings(dog_id)`
 - `booking_stays(booking_id)`

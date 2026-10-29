@@ -10,6 +10,8 @@
 
 **Spec:** `docs/superpowers/specs/2026-10-29-backend-schema-design.md`
 
+> **Note (post-review):** V1 diverged from the SQL snippets below during code review. Changes: E.164 phone check, case-insensitive dog-name unique index, renamed `*_check` constraints, and SQLSTATE-based identity test. `V1__initial_schema.sql` and the spec are authoritative.
+
 **Ground rules (from CLAUDE.md):** no commits without the project owner approving the message. Never touch prod. Schema changes happen only through Flyway.
 
 ---
