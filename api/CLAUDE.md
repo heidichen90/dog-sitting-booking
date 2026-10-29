@@ -4,8 +4,8 @@ Folder-specific rules for the Spring Boot API. Shared project rules live in the 
 
 ## Stack
 
-- Spring Boot 3.4, Java 21, Maven (`./mvnw` wrapper — don't require a system-wide `mvn`)
-- `spring-boot-starter-web`, `spring-boot-starter-actuator`, `springdoc-openapi-starter-webmvc-ui`
+- Spring Boot 4.1, Java 21, Maven (`./mvnw` wrapper — don't require a system-wide `mvn`)
+- `spring-boot-starter-webmvc`, `spring-boot-starter-actuator`, `springdoc-openapi-starter-webmvc-ui`
 - API contract: springdoc-openapi generates the OpenAPI spec from this app; `web/` generates its TS types from that spec.
 
 ## Current state
