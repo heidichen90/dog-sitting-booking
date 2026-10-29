@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: api
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+# Datasource (dev/prod Postgres) config lands here once the dev DB step happens.
