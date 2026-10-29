@@ -129,10 +129,10 @@ Earnings per month, per year and per client need no schema change:
 
 - One migration: `api/src/main/resources/db/migration/V1__initial_schema.sql`. Applied migrations are never edited; later changes go in new `V2__…` files.
 - Local databases: Postgres.app (PostgreSQL 18, port 5432), hosting two databases, `dd_pet_care_dev` and `dd_pet_care_test`. No Docker.
-- The schema is changed only through Flyway migrations, never by hand in a GUI client such as TablePlus.
+- The schema is changed only through Flyway migrations, never by hand in a GUI client such as DBeaver.
 - Prod database: hosting not yet decided (separate decision). It must run PostgreSQL 18 to match local.
-- Spring profiles `dev` and `prod`. Database credentials come only from environment variables and are never committed.
-- Flyway `clean` stays disabled.
+- Database credentials come only from environment variables (`DB_URL`, `DB_USERNAME`, `DB_PASSWORD`) and are never committed. Locally they're loaded from the gitignored `db.dev.local`; tests use the `test` profile.
+- Flyway `clean` stays disabled, except in the `test` profile, where it runs only against a database whose name ends in `_test`.
 
 ## Testing
 
