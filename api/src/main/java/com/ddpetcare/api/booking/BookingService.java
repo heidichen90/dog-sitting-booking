@@ -1,5 +1,7 @@
 package com.ddpetcare.api.booking;
 
+import java.util.List;
+
 import com.ddpetcare.api.booking.CreateBookingRequest.ClientRef;
 import com.ddpetcare.api.booking.CreateBookingRequest.DogRef;
 import com.ddpetcare.api.booking.CreateBookingRequest.StayRequest;
@@ -36,6 +38,28 @@ public class BookingService {
                     stay.unitRate(), stay.pickupDropoffFee());
         }
         return BookingResponse.from(bookings.save(booking));
+    }
+
+    @Transactional(readOnly = true)
+    public List<BookingResponse> list() {
+        return bookings.findAllByOrderByCreatedAtDescIdDesc().stream().map(BookingResponse::from).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public BookingResponse get(long id) {
+        return BookingResponse.from(findWithDetails(id));
+    }
+
+    @Transactional
+    public BookingResponse cancel(long id) {
+        Booking booking = findWithDetails(id);
+        booking.cancel();
+        return BookingResponse.from(booking);
+    }
+
+    private Booking findWithDetails(long id) {
+        return bookings.findWithDetailsById(id)
+                .orElseThrow(() -> new NotFoundException("Booking " + id + " not found"));
     }
 
     private Client resolveClient(ClientRef ref) {
