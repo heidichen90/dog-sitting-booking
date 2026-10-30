@@ -1,0 +1,10 @@
+{
+  "client": { "id": {{clientId}} },
+  "dog": { "name": "Biscuit" },
+  "notes": "  Allergic to chicken  ",
+  "stays": [
+    { "dropOffDate": "2026-11-02", "dropOffTime": "09:00",
+      "pickUpDate": "2026-11-04", "pickUpTime": null,
+      "unitRate": 40.00, "pickupDropoffFee": 15.00 }
+  ]
+}

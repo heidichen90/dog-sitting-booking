@@ -1,0 +1,9 @@
+{
+  "client": { "name": "Sarah Lee" },
+  "dog": { "name": "Biscuit" },
+  "stays": [
+    { "dropOffDate": "2026-11-02", "dropOffTime": "10:00",
+      "pickUpDate": "2026-11-02", "pickUpTime": "09:00",
+      "unitRate": 35.00, "pickupDropoffFee": 0 }
+  ]
+}

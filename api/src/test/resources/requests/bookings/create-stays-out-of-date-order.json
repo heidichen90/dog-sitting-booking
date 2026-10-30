@@ -1,0 +1,12 @@
+{
+  "client": { "name": "Sarah Lee", "phone": "+447700900123" },
+  "dog": { "name": "Biscuit" },
+  "stays": [
+    { "dropOffDate": "2026-11-10", "dropOffTime": "08:00",
+      "pickUpDate": "2026-11-10", "pickUpTime": "17:00",
+      "unitRate": 35.00, "pickupDropoffFee": 0 },
+    { "dropOffDate": "2026-11-02", "dropOffTime": "09:00",
+      "pickUpDate": "2026-11-04", "pickUpTime": null,
+      "unitRate": 40.00, "pickupDropoffFee": 15.00 }
+  ]
+}
