@@ -88,10 +88,30 @@ All errors are `ProblemDetail` JSON. Validation errors list each field:
 
 | Status | When |
 |---|---|
-| 400 | Missing or blank fields; no stays; both or neither of `id` and `name` on client or dog; phone not E.164; pick-up date before drop-off; same-day pick-up time not after drop-off time; negative rate or fee; more than 2 decimal places; dog `id` belongs to another client; new client with an existing dog `id`; malformed JSON |
+| 400 | Missing or blank fields; no stays; both or neither of `id` and `name` on client or dog; phone not E.164; pick-up date before drop-off; same-day pick-up time not after drop-off time; negative rate or fee; more than 2 decimal places; over a limit (below); times not `HH:mm`; dog `id` belongs to another client; new client with an existing dog `id`; malformed JSON or wrongly typed values |
 | 404 | Unknown client, dog or booking id |
 | 409 | New client's phone already on file. Body includes `"existingClient": { "id": 3, "name": "Sarah Lee" }` |
-| 500 | Any other database constraint violation (means our validation missed a case); logged |
+| 500 | Any other database constraint violation (means our validation missed a case). Only the constraint name is logged, never the row, since Postgres's message includes names and phones |
+| 500 | Any other unexpected exception: title "Internal error", generic detail, logged with stack trace |
+
+**Request limits** (approved 2026-10-30), each a 400 naming the field:
+
+| Limit | Value |
+|---|---|
+| Stays per booking | 1 to 31 |
+| Nights per stay | at most 60 (`stays[i].pickUpDate`) |
+| Drop-off year | 2000 to 2100 (`stays[i].dropOffDate`); a sanity bound so out-of-range dates can't reach Postgres |
+| `unitRate`, `pickupDropoffFee` | 0 to 9999.99, 2 decimal places |
+| Client name, dog name | at most 100 characters; blank (incl. Unicode spaces) rejected |
+| `notes` | at most 2000 characters |
+| Times | `HH:mm` only |
+
+**Error fields name the input to highlight:**
+- Blank names report `client.name` / `dog.name`.
+- `id`/`name` combination errors report `client` / `dog`.
+- Stay date rules report `stays[i].pickUpDate`, and the same-day time rule reports `stays[i].pickUpTime`.
+
+A malformed or mistyped body returns the same "Invalid request" title, with a generic detail and no parser internals.
 
 ## Persistence
 
@@ -191,6 +211,12 @@ Ids that tests create at run time are written as placeholders (`{{clientId}}`, `
 - A failed create leaves no client, dog or booking rows behind.
 - Listing 1 or 5 bookings issues the same number of SQL queries (Hibernate statistics).
 - Entity/schema mismatches fail the build via `ddl-auto: validate`.
+
+## Future to-dos
+
+- **Auth vs the catch-all 500 handler.** When Spring Security is added, make sure `AccessDeniedException` and `AuthenticationException` aren't turned into 500s by the catch-all `@ExceptionHandler(Exception.class)`. Rethrow them or give them their own handlers, so they stay 403/401.
+
+- **Race-case 409 has no `existingClient`.** If two creates with the same new phone race past the service's check, the `clients_phone_key` constraint fires after the Hibernate session is already broken, so the 409 can't look up and name the existing client. Accepted for now (one user, no concurrent creates); revisit if the API ever has concurrent writers, e.g. by retrying the lookup in a new transaction.
 
 ## Out of scope
 

@@ -10,6 +10,8 @@
 
 **Spec:** `docs/superpowers/specs/2026-10-30-booking-api-design.md`
 
+> **Note (post-review):** The implementation diverged from some snippets below during code review. Changes: money stored at scale 2; unmodifiable entity collections; stays sorted in responses; owner-approved request limits and `HH:mm` times; class-level validators in `booking/RequestRules.java` that report on real field names, replacing the `@AssertTrue` methods; typed error records; constraint matching by name with no row data logged; a catch-all 500 handler. The code and the spec are authoritative.
+
 **Branch:** `feat/booking-api` (spec already committed as `daa0af1`).
 
 **Ground rules (from CLAUDE.md):** no commits without the project owner approving the message. No dependencies beyond the two approved in the spec. Never touch prod. Schema changes happen only through Flyway, and this plan needs none.
@@ -2472,7 +2474,7 @@ docs(api): document JPA and test conventions
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 ```
-Files: `api/CLAUDE.md docs/superpowers/plans/2026-10-30-booking-api.md`
+Files: `api/CLAUDE.md docs/superpowers/plans/2026-10-30-booking-api.md docs/superpowers/specs/2026-10-30-booking-api-design.md`
 
 ---
 
