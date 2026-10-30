@@ -1,8 +1,8 @@
 # Backend schema design
 
 **Date:** 2026-10-29
-**Status:** Approved in brainstorming; awaiting spec review
-**Stack:** Spring Boot (Java) + PostgreSQL + Flyway, in `api/` (not yet created)
+**Status:** Approved and implemented (V1 migration, `api/src/main/resources/db/migration/V1__initial_schema.sql`)
+**Stack:** Spring Boot (Java) + PostgreSQL + Flyway, in `api/`
 
 ## Goal
 
@@ -103,7 +103,7 @@ Checks:
 - A booking must have at least one stay when it's created.
 - Cancelling a booking cancels all its stays. When a booking's last confirmed stay is cancelled, the booking is cancelled too.
 - Creating or editing a stay that overlaps a `blocked_dates` range returns a warning, not an error.
-- Deletes are never exposed. Every FK is `ON DELETE RESTRICT` (the Postgres default `NO ACTION`).
+- Deletes are never exposed. Every FK uses the Postgres default `ON DELETE NO ACTION`, which blocks deleting a referenced row (same effect as RESTRICT, since nothing is deferrable).
 
 ## Indexes
 
@@ -131,7 +131,7 @@ Earnings per month, per year and per client need no schema change:
 - Local databases: Postgres.app (PostgreSQL 18, port 5432), hosting two databases, `dd_pet_care_dev` and `dd_pet_care_test`. No Docker.
 - The schema is changed only through Flyway migrations, never by hand in a GUI client such as DBeaver.
 - Prod database: hosting not yet decided (separate decision). It must run PostgreSQL 18 to match local.
-- Database credentials come only from environment variables (`DB_URL`, `DB_USERNAME`, `DB_PASSWORD`) and are never committed. Locally they're loaded from the gitignored `db.dev.local`; tests use the `test` profile.
+- Database credentials come only from environment variables (`DB_URL`, `DB_USERNAME`, `DB_PASSWORD`) and are never committed. Locally they're loaded from the gitignored `db.dev.local`. Tests use the `test` profile, which points at `TEST_DB_URL` (default `jdbc:postgresql://localhost:5432/dd_pet_care_test`) with the same username and password.
 - Flyway `clean` stays disabled, except in the `test` profile, where it runs only against a database whose name ends in `_test`.
 
 ## Testing
