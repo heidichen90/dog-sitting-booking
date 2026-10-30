@@ -3,3 +3,11 @@ spring:
     url: ${TEST_DB_URL:jdbc:postgresql://localhost:5432/dd_pet_care_test}
   flyway:
     clean-disabled: false
+  jpa:
+    properties:
+      hibernate:
+        generate_statistics: true
+
+logging:
+  level:
+    org.hibernate.engine.internal.StatisticalLoggingSessionEventListener: WARN
