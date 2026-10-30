@@ -9,6 +9,7 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 
 import com.ddpetcare.api.DatabaseTest;
+import com.ddpetcare.api.TestRequests;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -58,6 +59,24 @@ class CancelBookingTest extends DatabaseTest {
         Instant updatedAt = jdbc.sql("SELECT updated_at FROM bookings WHERE id = ?").param(booking)
                 .query(OffsetDateTime.class).single().toInstant();
         assertThat(updatedAt).isEqualTo(Instant.parse("2000-01-01T00:00:00Z"));
+    }
+
+    @Test
+    void cancellingCancelsEveryStay() throws Exception {
+        long id = idOf(postJson("/bookings", TestRequests.load("bookings/create-new-client-new-dog.json"))
+                .andExpect(status().isCreated()));
+
+        postEmpty("/bookings/" + id + "/cancel")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("cancelled"))
+                .andExpect(jsonPath("$.stays.length()").value(2))
+                .andExpect(jsonPath("$.stays[0].status").value("cancelled"))
+                .andExpect(jsonPath("$.stays[1].status").value("cancelled"))
+                .andExpect(jsonPath("$.total").value(0.0));
+
+        flushAndClear();
+        assertThat(jdbc.sql("SELECT count(*) FROM booking_stays WHERE booking_id = ? AND status = 'confirmed'")
+                .param(id).query(Long.class).single()).isZero();
     }
 
     @Test

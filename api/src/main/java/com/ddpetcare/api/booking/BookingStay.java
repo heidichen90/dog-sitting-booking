@@ -105,6 +105,10 @@ public class BookingStay {
         return price;
     }
 
+    void cancel() {
+        status = Status.CANCELLED;
+    }
+
     public Status getStatus() {
         return status;
     }

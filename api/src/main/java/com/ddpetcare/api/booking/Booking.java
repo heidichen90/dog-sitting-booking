@@ -74,6 +74,7 @@ public class Booking {
 
     public void cancel() {
         status = Status.CANCELLED;
+        stays.forEach(BookingStay::cancel);
     }
 
     public BigDecimal total() {
