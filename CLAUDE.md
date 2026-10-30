@@ -18,7 +18,7 @@ A dog-sitting booking app for a sole-trader business. Monorepo: `web/` (React fr
 - Spring Boot REST API (Java)
 - PostgreSQL database with Flyway migrations
 - Separate dev and prod databases
-- Entities: clients, dogs, bookings + booking_stays, blocked_dates (payment is a `paid_at` column on bookings). Schema done (V1); JPA entities and endpoints next.
+- Entities: clients, dogs, bookings + booking_stays, blocked_dates (payment is a `paid_at` column on bookings). Schema (V1) and booking API (JPA entities, `/clients`, `/bookings`) done; frontend switch-over next.
 
 ## Rules Claude must follow (apply across `web/` and `api/`)
 
@@ -47,7 +47,7 @@ Resolved in the backend schema (V1; see `docs/superpowers/specs/2026-10-29-backe
 3. No availability modelling → `blocked_dates` (warn only, no capacity limits).
 4. Client-side timestamp IDs → database-generated `bigint` identity IDs.
 
-Still open: auth (required before the API is reachable from the internet), and `updated_at` not maintained until JPA entities exist.
+Still open: auth (required before the API is reachable from the internet) and CORS (needed before `web/` can call the API).
 
 ## Future phases (for context)
 - Weeks 3–4: automated WhatsApp confirmation + calendar sync

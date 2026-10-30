@@ -28,7 +28,7 @@ Give `api/` the endpoints the frontend needs for what it does today with `localS
 | `POST` | `/bookings` | Create a booking with its stays. `201 Created`, `Location: /bookings/{id}`, body is the booking |
 | `GET` | `/bookings` | All bookings, newest first, cancelled included |
 | `GET` | `/bookings/{id}` | One booking |
-| `POST` | `/bookings/{id}/cancel` | Set the booking to `cancelled`; returns it. Cancelling a cancelled booking returns it unchanged |
+| `POST` | `/bookings/{id}/cancel` | Set the booking and all its stays to `cancelled` (so `total` becomes 0.00); returns it. Cancelling a cancelled booking returns it unchanged |
 
 ### Create request
 
@@ -157,7 +157,7 @@ If any step fails, nothing is saved. A concurrent create with the same new phone
 ## Validation placement
 
 - **Single-field rules** are Bean Validation annotations on the request records.
-- **Cross-field rules** that need no database (id XOR name, date order, same-day time order) are `@AssertTrue` methods on the records, so they return as ordinary field errors.
+- **Cross-field rules** that need no database (id XOR name, date order, same-day time order) are class-level constraints in `booking/RequestRules.java` (`@ValidClientRef`, `@ValidDogRef`, `@ValidStayDates`). Their validators report on the real field (`client`, `dog`, `stays[i].pickUpDate`, `stays[i].pickUpTime`, `stays[i].dropOffDate`), not on a synthetic method name.
 - **Rules that need the database** (unknown id, dog/client mismatch, phone in use) are in `BookingService`.
 - Names are trimmed before saving.
 - One `@RestControllerAdvice` maps every error to `ProblemDetail`.
@@ -179,10 +179,13 @@ api/src/test/java/com/ddpetcare/api/
     ClientAndDogResolutionTest.java    existing/new client and dog, dog reuse, 404s, 409
     CreateBookingRollbackTest.java     a failed create leaves no rows behind
     ListBookingsTest.java              GET /bookings and /bookings/{id}, total, ordering
-    CancelBookingTest.java             cancel, cancel twice, updated_at changes
+    CancelBookingTest.java             cancel (cascades to stays), cancel twice, updated_at changes
     BookingQueryCountTest.java         same query count for 1 and 5 bookings
   client/
     ListClientsTest.java
+  error/
+    ApiExceptionHandlerTest.java       constraint-violation mapping, catch-all 500
+    SpringErrorsStillMappedTest.java   Spring's own 400/405 still handled
   OpenApiTest.java                     /v3/api-docs lists the five endpoints
 ```
 
@@ -195,7 +198,7 @@ api/src/test/resources/requests/bookings/
   create-reuse-dog-different-case.json
   create-phone-in-use.json
   create-pickup-before-dropoff.json
-  create-one-invalid-stay.json
+  create-at-limits.json
   ...
 ```
 
@@ -213,6 +216,8 @@ Ids that tests create at run time are written as placeholders (`{{clientId}}`, `
 - Entity/schema mismatches fail the build via `ddl-auto: validate`.
 
 ## Future to-dos
+
+- **OpenAPI precision before generating TypeScript types** (first step of the frontend plan): mark response fields required/nullable, give `status` and `service` enum values, document `POST /bookings` as 201 with `Location`, document the 400/404/409 ProblemDetail shapes, and set readable operationIds.
 
 - **Auth vs the catch-all 500 handler.** When Spring Security is added, make sure `AccessDeniedException` and `AuthenticationException` aren't turned into 500s by the catch-all `@ExceptionHandler(Exception.class)`. Rethrow them or give them their own handlers, so they stay 403/401.
 
