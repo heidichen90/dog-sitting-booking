@@ -1,0 +1,13 @@
+server:
+  # Cloud Run and Vercel are proxies: trust X-Forwarded-* so the app sees https.
+  forward-headers-strategy: framework
+  servlet:
+    session:
+      cookie:
+        secure: true
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false

@@ -10,6 +10,7 @@ import org.springframework.boot.web.server.Cookie;
 import org.springframework.boot.web.server.autoconfigure.ServerProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -74,8 +75,11 @@ public class SecurityConfig {
     }
 
     @Bean
-    CsrfTokenRepository csrfTokenRepository() {
-        return CookieCsrfTokenRepository.withHttpOnlyFalse();
+    CsrfTokenRepository csrfTokenRepository(
+            @Value("${server.servlet.session.cookie.secure:false}") boolean secureCookies) {
+        CookieCsrfTokenRepository repository = CookieCsrfTokenRepository.withHttpOnlyFalse();
+        repository.setCookieCustomizer(cookie -> cookie.secure(secureCookies));
+        return repository;
     }
 
     @Bean
@@ -85,7 +89,11 @@ public class SecurityConfig {
 
     @Bean
     UserDetailsService userDetailsService(@Value("${owner.username}") String username,
-                                          @Value("${owner.password-hash}") String passwordHash) {
+                                          @Value("${owner.password-hash}") String passwordHash,
+                                          Environment environment) {
+        if (environment.matchesProfiles("prod") && !passwordHash.startsWith("{bcrypt}")) {
+            throw new IllegalStateException("OWNER_PASSWORD_HASH must be a {bcrypt} hash in production");
+        }
         return new InMemoryUserDetailsManager(User.withUsername(username).password(passwordHash).build());
     }
 
