@@ -11,7 +11,7 @@ Folder-specific rules for the Spring Boot API. Shared project rules live in the 
 
 ## Current state
 
-Endpoints: `GET /clients`, `POST /bookings`, `GET /bookings`, `GET /bookings/{id}`, `POST /bookings/{id}/cancel` (design in `docs/superpowers/specs/2026-10-30-booking-api-design.md`; schema in `docs/superpowers/specs/2026-10-29-backend-schema-design.md` and `api/docs/schema.md`). `blocked_dates` has no entity yet. No auth and no CORS yet.
+Endpoints (all under `/api`): `GET /api/clients`, `POST /api/bookings`, `GET /api/bookings`, `GET /api/bookings/{id}`, `POST /api/bookings/{id}/cancel` (design in `docs/superpowers/specs/2026-10-30-booking-api-design.md`, prefix in `2026-10-31-web-api-switch-design.md`; schema in `docs/superpowers/specs/2026-10-29-backend-schema-design.md` and `api/docs/schema.md`). `/actuator/health` and `/v3/api-docs` aren't prefixed. `blocked_dates` has no entity yet. No auth and no CORS yet.
 
 ## Code conventions
 
@@ -22,6 +22,7 @@ Endpoints: `GET /clients`, `POST /bookings`, `GET /bookings`, `GET /bookings/{id
 - Money is `BigDecimal` at scale 2, never `double`.
 - Request validation: single-field rules are annotations on the request records; cross-field rules are class-level constraints in `booking/RequestRules.java` that report on the real field (e.g. `stays[0].pickUpDate`). Rules that need the database live in the service.
 - Errors are `ProblemDetail`, via `error/ApiExceptionHandler`. Never log or return database error messages: they contain client names and phones. Log the constraint name instead.
+- The OpenAPI spec is a contract: `web/` generates its types from it. Operations declare an `operationId` and their error responses (`error/ProblemSchemas`); fixed value lists are `@Schema(allowableValues = …)` on the records. `OpenApiSchemaCustomizer` makes every property of the response schemas required automatically and has an explicit list only for the Problem schemas; new nullable response fields must be added to its `NULLABLE` map. It also sets `HH:mm` times and `minItems`, because OpenAPI 3.1 output drops `@Schema(nullable = true)`. When a response or request record changes, update that customizer and `OpenApiTest`, then regenerate `web/src/api/schema.d.ts`.
 
 ## Database
 

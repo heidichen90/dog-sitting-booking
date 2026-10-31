@@ -10,6 +10,20 @@
 
 **Spec:** docs/superpowers/specs/2026-10-31-web-api-switch-design.md
 
+> **Note (post-review):** The implementation diverged from some snippets below during code review. Changes:
+> - `client.ts` only throws `ApiError`, and maps proxy 502/503/504 to status 0
+> - stricter `phone.ts`
+> - MSW fails tests on unhandled requests
+> - response schemas get all properties required automatically
+> - Tasks 1–2 were committed together
+> - picker type guard and normalised `filterOptions`
+> - separate cancel error with no Retry
+> - cancel confirmation is an MUI Dialog
+> - ICS text escaping and UTC DTSTAMP
+> - more form tests
+>
+> The code and the spec are authoritative.
+
 **Ground rules (from CLAUDE.md):** no commits without the project owner approving the message. No dependencies beyond the seven pinned below (`@testing-library/dom` is the peer of `@testing-library/react`; see "Clarifications"). Never read or print `db.dev.local`, never touch prod, and don't POST to the dev database (only the project owner does that, in the manual check). No schema change and no migration. MUI: only `Box` takes CSS-shaped props; everything else uses `sx`. TypeScript stays strict and pinned to 5.9.3. **Don't merge `feat/web-api` to `main`**: Vercel deploys `main`, and the live site must keep its browser-storage version until the API is hosted.
 
 ---
