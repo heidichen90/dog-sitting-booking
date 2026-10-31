@@ -12,7 +12,7 @@ From the repo root, **append** (`>>`, never `>`, which would wipe the `DB_*` lin
 
 ```bash
 read -rsp 'Dev password: ' DEVPW; echo
-printf '%s\n' 'OWNER_USERNAME=ddpetcare' "OWNER_PASSWORD_HASH={noop}${DEVPW}" >> db.dev.local
+printf '\n%s\n' 'OWNER_USERNAME=ddpetcare' "OWNER_PASSWORD_HASH={noop}${DEVPW}" >> db.dev.local
 unset DEVPW
 ```
 
@@ -24,7 +24,7 @@ Check that both lines are there without printing the file:
 grep -c '^OWNER_' db.dev.local
 ```
 
-Expected: `2`.
+Expected: `2`. If you get `1`, the first line joined the end of the previous line: open `db.dev.local` in a text editor and put each `OWNER_…` line on its own line.
 
 (`{noop}` means "plain password, dev only". Production uses `{bcrypt}...`, and the API refuses to start in production with anything else.)
 

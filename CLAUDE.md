@@ -23,7 +23,7 @@ A dog-sitting booking app for a sole-trader business. Monorepo: `web/` (React fr
 - Spring Boot REST API (Java)
 - PostgreSQL database with Flyway migrations
 - Separate dev and prod databases
-- Entities: clients, dogs, bookings + booking_stays, blocked_dates (payment is a `paid_at` column on bookings). Schema (V1) and booking API (JPA entities, `/clients`, `/bookings`) done; frontend switch-over next.
+- Entities: clients, dogs, bookings + booking_stays, blocked_dates (payment is a `paid_at` column on bookings). Schema (V1), booking API, website switch-over (`feat/web-api`) and login + hosting (`feat/go-live`) built; going live per `docs/runbooks/go-live.md`.
 - Owner login, hosting (Cloud Run + Neon) and nightly backups: `docs/superpowers/specs/2026-10-31-go-live-design.md`
 
 ## Rules Claude must follow (apply across `web/` and `api/`)

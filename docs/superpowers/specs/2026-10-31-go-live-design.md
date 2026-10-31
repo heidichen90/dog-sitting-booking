@@ -194,8 +194,8 @@ No new website dependencies.
 
 ### Website routing (`web/vercel.json`)
 
-- **Rewrite:** `/api/:path*` → `https://<cloud-run-url>/api/:path*`. The Cloud Run URL is configured as a project setting during setup.
-- **Timeout:** the Vercel rewrite timeout must exceed a cold start. This is checked during setup, and documented with a mitigation if it doesn't.
+- **Rewrite:** `/api/:path*` → `https://ddpet-api-<PROJECT_NUMBER>.europe-west2.run.app/api/:path*`. The file is committed with a `PROJECT_NUMBER` placeholder that the owner fills in after the first deploy (`docs/runbooks/cloud-setup.md`).
+- **Timeout:** Vercel's limit for external rewrites is 120 s, and Cloud Run's request timeout is set to 60 s, so a 5–15 s cold start fits. No setup step is needed.
 
 ## Part 3: Backups
 
