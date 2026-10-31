@@ -2,7 +2,7 @@
 
 ## Project context
 
-A dog-sitting booking app for a sole-trader business. Monorepo: `web/` (React frontend) and `api/` (Spring Boot backend). No auth yet.
+A dog-sitting booking app for a sole-trader business. Monorepo: `web/` (React frontend) and `api/` (Spring Boot backend). Owner-only login (Spring Security; sessions in Postgres). Live: Vercel (website) + Cloud Run (API) + Neon (database).
 
 **The project owner is the spec owner and reviewer; Claude is the coding agent.** All architectural decisions are made together — Claude proposes options with trade-offs, the project owner decides.
 
@@ -10,15 +10,21 @@ A dog-sitting booking app for a sole-trader business. Monorepo: `web/` (React fr
 
 - `web/` — React + Vite frontend (TypeScript). Folder-specific rules: `web/CLAUDE.md`.
 - `api/` — Spring Boot REST API (Java), PostgreSQL + Flyway. Folder-specific rules: `api/CLAUDE.md`.
-- Deploys are independent per package: Vercel deploys `web/` (root directory set to `web`), and GitHub Actions workflows are path-filtered (`web.yml` on `web/**`; `api.yml` on `api/**`).
+- Deploys are independent per package:
+  - Vercel deploys `web/` (root directory set to `web`).
+  - `api-deploy.yml` deploys `api/` to Cloud Run on pushes to `main` touching `api/**` (it also triggers on `feat/go-live` until the go-live merge removes that).
+  - `web.yml` and `api.yml` (path-filtered) run the checks.
+  - `db-backup.yml` takes a nightly encrypted backup to Cloud Storage.
+  - Owner runbooks are in `docs/runbooks/`.
 - Design specs and implementation plans: `docs/superpowers/`.
 
-## Planned additions (weeks 1–2)
+## Weeks 1–2 (done)
 
 - Spring Boot REST API (Java)
 - PostgreSQL database with Flyway migrations
 - Separate dev and prod databases
 - Entities: clients, dogs, bookings + booking_stays, blocked_dates (payment is a `paid_at` column on bookings). Schema (V1) and booking API (JPA entities, `/clients`, `/bookings`) done; frontend switch-over next.
+- Owner login, hosting (Cloud Run + Neon) and nightly backups: `docs/superpowers/specs/2026-10-31-go-live-design.md`
 
 ## Rules Claude must follow (apply across `web/` and `api/`)
 
@@ -30,7 +36,7 @@ A dog-sitting booking app for a sole-trader business. Monorepo: `web/` (React fr
 - Write tests and run them; report results and any remaining risks.
 - No new dependencies without approval.
 - No commits or pushes without approval.
-- Never touch production credentials or data. Dev and prod databases are strictly separate.
+- Never touch production credentials or data. Dev and prod databases are strictly separate. Production setup and data access are OWNER steps in `docs/runbooks/`.
 - No speculative features, no premature abstractions. Match scope to the approved task.
 - Default to no comments; add one only when the WHY is non-obvious.
 
@@ -47,7 +53,7 @@ Resolved in the backend schema (V1; see `docs/superpowers/specs/2026-10-29-backe
 3. No availability modelling → `blocked_dates` (warn only, no capacity limits).
 4. Client-side timestamp IDs → database-generated `bigint` identity IDs.
 
-Still open: auth (required before the API is reachable from the internet) and CORS (needed before `web/` can call the API).
+Auth is done (owner login), and CORS isn't needed: the website reaches the API same-origin through the Vite proxy or a Vercel rewrite.
 
 ## Future phases (for context)
 - Weeks 3–4: automated WhatsApp confirmation + calendar sync

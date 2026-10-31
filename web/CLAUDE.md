@@ -6,9 +6,9 @@ Folder-specific rules for the React frontend. Shared project rules live in the r
 
 - React 19 + Vite, MUI v9, dayjs — TypeScript, `strict: true` (see `tsconfig.json`)
 - **TypeScript version:** pinned to `5.9.3`, not latest (`7.x`) — `typescript-eslint` doesn't support TS 7 yet. Re-check this pin before bumping TypeScript.
-- **Deployed:** Vercel, root directory `web/`, auto-deploys on push to `main`
-- **⚠️ Don't merge `feat/web-api` (the API-backed website) into `main` yet.** Two blockers: (1) the API and a production database aren't hosted, so the live site would break; (2) the owner's real bookings in the live site's browser storage need a migration plan first. Its PR stays a draft until both are done.
-- **Data:** the `api/` backend, called through `src/api/client.ts` at relative `/api/...` URLs. In dev, Vite proxies `/api` to `http://localhost:8080`. The live Vercel site (`main`) still runs the old localStorage version until the API is hosted, so this branch isn't merged before then.
+- **Deployed:** Vercel, root directory `web/`, auto-deploys on push to `main`. `web/vercel.json` rewrites `/api/:path*` to the Cloud Run API, so the browser stays on one origin.
+- **⚠️ Don't merge `feat/web-api` (the API-backed website) into `main` yet.** Merging to `main` goes through `docs/runbooks/go-live.md` (owner only): the API is hosted and the owner starts fresh, so the old localStorage bookings aren't migrated. Its PR stays a draft until the runbook's merge step.
+- **Data:** the `api/` backend, called through `src/api/client.ts` at relative `/api/...` URLs. In dev, Vite proxies `/api` to `http://localhost:8080`. In production, `vercel.json` rewrites `/api` to Cloud Run.
 - **Booking submission:** one form submit creates one booking with one or more days (stays); client, dog, notes and rates are shared by its days.
 - **Dev dependencies:** Test and codegen tools are dev-only and pinned exactly: openapi-typescript 7.13.0, vitest 4.1.12, @testing-library/react 16.3.3, @testing-library/dom 10.4.2, @testing-library/user-event 14.6.8, jsdom 29.1.1, msw 2.15.0. They're the newest versions that run on CI's Node 20; vitest 5, jsdom 30 and msw 3 need Node 22.
 
@@ -21,12 +21,19 @@ Folder-specific rules for the React frontend. Shared project rules live in the r
 - Only `Box` accepts CSS-shaped props (`mb`, `fontWeight`, `display`, etc.) directly. All other MUI components (`Stack`, `Typography`, `Button`, ...) silently ignore them — always use `sx={{ ... }}` instead.
 - Confirmation prompts use an MUI `Dialog` with explicit action labels (e.g. 'Keep booking' / 'Cancel booking'), not `window.confirm`.
 
+## Login
+
+- `App` calls `GET /api/me` on startup: a 401 shows `LoginPage`; a 200 loads clients and bookings. Any 401 later (from `App` or `BookingForm`'s `onUnauthorized`) calls `signOut()`, which shows the login page ("Your session has ended. Please log in again.") and drops the loaded data.
+- A 403 on a POST checks `/api/me` to tell an ended session from a real CSRF failure.
+- `client.ts` sends the `XSRF-TOKEN` cookie's value as `X-XSRF-TOKEN` on every non-GET request, and returns `undefined` for a 204.
+- Tests: serve `GET /api/me` (`{ username: 'ddpetcare' }`) in every `App` test, or it fails as an unhandled request.
+
 ## API types
 
-- `src/api/schema.d.ts` is generated from the API's `/v3/api-docs` by `npm run gen:api` (the API must be running; restart it after changing its annotations). It's committed; never edit it by hand. ESLint ignores it.
+- `src/api/schema.d.ts` is generated from the API's `/v3/api-docs` by `npm run gen:api` (the API must be running, with `OWNER_USERNAME` / `OWNER_PASSWORD_HASH` in `db.dev.local`; `/v3/api-docs` needs no login outside production; restart it after changing its annotations). It's committed; never edit it by hand. ESLint ignores it.
 - `src/types.ts` gives the generated schemas short names (`Booking`, `Stay`, `Client`, `Dog`, `CreateBookingRequest`, …) and holds the form-only types (`BookingDraft`, `ClientChoice`, `DogChoice`, field-error shapes).
 - `src/api/client.ts` is the only place that calls `fetch`. A non-2xx response or a network failure throws `ApiError` (`status` 0 for network), with `fieldErrors` and `existingClient` from the problem body. `client.ts` only ever throws `ApiError`. A 502/503/504 with no problem body (the Vite proxy when the API isn't running) is reported as status 0, "Could not reach the server".
-- `src/phone.ts` turns typed numbers into E.164 (`07…`/`447…`/`00…`/`+44 (0)…` → `+44…`; UK mobiles must be `+447` plus 9 digits); anything else must already be valid E.164.
+- `src/phone.ts` (unused for now: the Phone field is hidden until the WhatsApp phase) turns typed numbers into E.164 (`07…`/`447…`/`00…`/`+44 (0)…` → `+44…`; UK mobiles must be `+447` plus 9 digits); anything else must already be valid E.164.
 
 ## Tests
 
