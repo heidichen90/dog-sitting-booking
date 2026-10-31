@@ -7,6 +7,7 @@ Folder-specific rules for the React frontend. Shared project rules live in the r
 - React 19 + Vite, MUI v9, dayjs — TypeScript, `strict: true` (see `tsconfig.json`)
 - **TypeScript version:** pinned to `5.9.3`, not latest (`7.x`) — `typescript-eslint` doesn't support TS 7 yet. Re-check this pin before bumping TypeScript.
 - **Deployed:** Vercel, root directory `web/`, auto-deploys on push to `main`
+- **⚠️ Don't merge `feat/web-api` (the API-backed website) into `main` yet.** Two blockers: (1) the API and a production database aren't hosted, so the live site would break; (2) the owner's real bookings in the live site's browser storage need a migration plan first. Its PR stays a draft until both are done.
 - **Data:** the `api/` backend, called through `src/api/client.ts` at relative `/api/...` URLs. In dev, Vite proxies `/api` to `http://localhost:8080`. The live Vercel site (`main`) still runs the old localStorage version until the API is hosted, so this branch isn't merged before then.
 - **Booking submission:** one form submit creates one booking with one or more days (stays); client, dog, notes and rates are shared by its days.
 - **Dev dependencies:** Test and codegen tools are dev-only and pinned exactly: openapi-typescript 7.13.0, vitest 4.1.12, @testing-library/react 16.3.3, @testing-library/dom 10.4.2, @testing-library/user-event 14.6.8, jsdom 29.1.1, msw 2.15.0. They're the newest versions that run on CI's Node 20; vitest 5, jsdom 30 and msw 3 need Node 22.

@@ -86,7 +86,7 @@ The existing components (`BookingForm`, `BookingEntry`, `Confirmation`, `Booking
 
 - **`npm run gen:api`:** runs `openapi-typescript http://localhost:8080/v3/api-docs -o src/api/schema.d.ts`. The API must be running.
 - **`npm test`:** runs `vitest run`.
-- **`vite.config.ts`:** `server.proxy: { '/api': 'http://localhost:8080' }`, plus the Vitest config (`environment: 'jsdom'` and a setup file that starts MSW).
+- **`vite.config.ts`:** `server.proxy: { '/api/': 'http://localhost:8080' }` (trailing slash, so routes like `/apiary` aren't proxied), plus the Vitest config (`environment: 'jsdom'` and a setup file that starts MSW).
 - **CI:** `.github/workflows/web.yml` gains `npm test`.
 
 ### `api/client.ts`
@@ -137,10 +137,12 @@ Client-side checks stay for quick feedback (required fields, pick-up not before 
 
 Converts what's typed before sending:
 - Remove spaces, dashes and brackets.
+- A leading `00` becomes `+`, and `+440` (from `+44 (0)…`) becomes `+44`.
 - A leading `07` becomes `+447`. A leading `447` becomes `+447`.
 - Anything already starting with `+` is kept as is.
+- A UK mobile (`+447…`) must be exactly `+447` plus 9 digits.
 
-If the result doesn't match `^\+[1-9][0-9]{7,14}$`, the field shows "Enter a UK mobile or international number" and nothing is sent.
+If the result doesn't match that, or `^\+[1-9][0-9]{7,14}$` for other numbers, the field shows "Enter a UK mobile or international number" and nothing is sent.
 
 ### Errors from the API
 
