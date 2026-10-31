@@ -1,43 +1,48 @@
 import type { Dayjs } from 'dayjs'
+import type { components } from './api/schema'
 
-export type Service = 'Day Care' | 'Boarding'
+type Schemas = components['schemas']
 
-/** A saved, submitted booking (what's persisted to storage). */
-export interface Booking {
-  id: number
-  dogName: string
-  ownerName: string
-  service: Service | ''
-  dropOff: string
-  pickUp: string
-  timesTbd: boolean
-  price: number
-  notes: string
-  pickupDropoff: boolean
-  createdAt: string
-}
+export type Booking = Schemas['BookingResponse']
+export type Stay = Schemas['StayResponse']
+export type Client = Schemas['ClientResponse']
+export type Dog = Schemas['DogResponse']
+export type CreateBookingRequest = Schemas['CreateBookingRequest']
+export type StayRequest = Schemas['StayRequest']
+export type FieldError = Schemas['FieldError']
+export type ExistingClient = Schemas['ExistingClient']
+export type Service = Stay['service']
 
-/** One in-progress booking entry being filled out in the form, before submission. */
+/** One day being filled in on the form, before submission. */
 export interface BookingDraft {
   id: number
   dropOff: Dayjs | null
   pickUp: Dayjs | null
   timesTbd: boolean
   pickupDropoff: boolean
-  notes: string
 }
 
-/** Fields shared across all entries in a single form submission. */
+/** The client picker's value: a client on file, or the name typed for a new one. */
+export type ClientChoice = { kind: 'existing'; client: Client } | { kind: 'new'; name: string }
+
+/** The dog picker's value: one of the chosen client's dogs, or the name typed for a new one. */
+export type DogChoice = { kind: 'existing'; dog: Dog } | { kind: 'new'; name: string }
+
+/** Fields shared by every day of one booking. */
 export interface SharedBookingFields {
-  dogName: string
-  ownerName: string
+  client: ClientChoice | null
+  phone: string
+  dog: DogChoice | null
+  notes: string
   dayRate: number | string
   overnightRate: number | string
 }
 
 export interface SharedFieldErrors {
-  dogName?: string
-  ownerName?: string
+  client?: string
+  phone?: string
+  dog?: string
+  notes?: string
   dayRate?: string
   overnightRate?: string
 }
@@ -45,4 +50,5 @@ export interface SharedFieldErrors {
 export interface EntryFieldErrors {
   dropOff?: string
   pickUp?: string
+  pickupDropoff?: string
 }
