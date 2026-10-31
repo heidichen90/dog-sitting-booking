@@ -126,6 +126,11 @@ A network failure throws `ApiError` with status 0.
 | "Times TBD" tick box | Ticked: send `dropOffTime` and `pickUpTime` as `null`. Unticked: send both as `HH:mm` |
 | Price preview | Still calculated in the browser for display; the server's price is the one that's saved and shown on confirmation |
 
+**Duplicate-name warning** (approved 2026-10-31):
+- **When it shows:** a typed new client name matches an existing client (ignoring case and extra spaces).
+- **What it shows:** "{name} is already a client — use them?", with a button that picks that client.
+- **It doesn't block:** submitting anyway still creates a new client, because two people can share a name.
+
 Client-side checks stay for quick feedback (required fields, pick-up not before drop-off). The server is the authority.
 
 ### Phone input (`phone.ts`)
