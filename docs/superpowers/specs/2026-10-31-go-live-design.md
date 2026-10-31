@@ -20,7 +20,7 @@ The owner is the only user, on a phone and a laptop.
 |---|---|---|
 | Priority | Free or near-free and simple | Sole-trader budget |
 | Login | Own login with Spring Security; one owner account | No outside service; standard and bank-relevant |
-| Sessions | Stored in Postgres (`spring-session-jdbc`); 30 days of inactivity | Survives restarts and scale-to-zero; logout and password changes end sessions for real |
+| Sessions | Stored in Postgres (`spring-session-jdbc`); you log in again 30 days after each login (approved 2026-10-31) | Survives restarts and scale-to-zero; logout and password changes end sessions for real |
 | Session cookie | `SESSION`, `HttpOnly`, `Secure`, `SameSite=Lax`; holds only a random session id | Scripts can't read it; the database row is the source of truth |
 | API hosting | Google Cloud Run, `europe-west2` (London), scale to zero, at most 1 instance | About £0 at this volume; a single instance means Flyway never runs twice at once |
 | Database | Neon free plan, PostgreSQL 18, London region | Permanent free plan; same major version as dev and CI |
@@ -80,7 +80,7 @@ No new website dependencies.
 - `spring-session-jdbc` stores sessions in `spring_session` and `spring_session_attributes`.
 - **Migration:** a new `V2__spring_session.sql` creates them, using Spring Session's PostgreSQL schema, copied into our migration so Flyway owns it.
 - **Initialisation:** Spring Session's own schema initialisation is disabled.
-- **Timeout:** 30 days of inactivity. Spring Session's cleanup job removes expired rows.
+- **Timeout:** the server-side session expires after 30 days of inactivity, and the `SESSION` cookie has a fixed 30-day `Max-Age` from login. So each device logs in again 30 days after login (owner decision, 2026-10-31). Spring Session's cleanup job removes expired rows.
 - **Cookie:** `SESSION`, with `HttpOnly`, `SameSite=Lax`, and `Secure` in production. Locally over `http://localhost`, `Secure` is off via the dev profile.
 
 ### Endpoints

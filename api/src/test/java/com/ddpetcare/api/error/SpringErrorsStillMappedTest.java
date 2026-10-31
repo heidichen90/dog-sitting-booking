@@ -18,7 +18,7 @@ class SpringErrorsStillMappedTest extends DatabaseTest {
 
     @Test
     void unsupportedMethodIsMethodNotAllowed() throws Exception {
-        mvc.perform(MockMvcRequestBuilders.delete("/api/bookings"))
+        perform(MockMvcRequestBuilders.delete("/api/bookings"))
                 .andExpect(status().isMethodNotAllowed());
     }
 }

@@ -21,7 +21,8 @@ class OpenApiSchemaCustomizer implements OpenApiCustomizer {
     private static final String TIME_PATTERN = "^([01][0-9]|2[0-3]):[0-5][0-9]$";
 
     private static final List<String> ALL_PROPERTIES_REQUIRED = List.of("BookingResponse", "StayResponse",
-            "ClientSummary", "DogSummary", "ClientResponse", "DogResponse", "FieldError", "ExistingClient");
+            "ClientSummary", "DogSummary", "ClientResponse", "DogResponse", "FieldError", "ExistingClient",
+            "MeResponse");
 
     private static final Map<String, List<String>> REQUIRED = Map.of(
             "Problem", List.of("title", "status", "detail", "instance"),
