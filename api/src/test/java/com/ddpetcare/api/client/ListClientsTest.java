@@ -16,7 +16,7 @@ class ListClientsTest extends DatabaseTest {
         insertDog(zoe, "Ace");
         insertClient("Amy Pond", null);
 
-        getJson("/clients")
+        getJson("/api/clients")
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2))
                 .andExpect(jsonPath("$[0].name").value("Amy Pond"))
@@ -30,7 +30,7 @@ class ListClientsTest extends DatabaseTest {
 
     @Test
     void returnsEmptyListWhenNoClients() throws Exception {
-        getJson("/clients")
+        getJson("/api/clients")
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(0));
     }

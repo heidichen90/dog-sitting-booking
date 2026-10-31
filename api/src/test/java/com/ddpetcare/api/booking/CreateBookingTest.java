@@ -19,13 +19,13 @@ class CreateBookingTest extends DatabaseTest {
     void createsBookingForExistingClientWithNewDog() throws Exception {
         long client = insertClient("Sarah Lee", "+447700900123");
 
-        ResultActions result = postJson("/bookings",
+        ResultActions result = postJson("/api/bookings",
                 TestRequests.load("bookings/create-existing-client-new-dog.json", Map.of("clientId", client)));
 
         result.andExpect(status().isCreated());
         long id = idOf(result);
         result.andExpect(status().isCreated())
-                .andExpect(header().string("Location", "/bookings/" + id))
+                .andExpect(header().string("Location", "/api/bookings/" + id))
                 .andExpect(jsonPath("$.status").value("confirmed"))
                 .andExpect(jsonPath("$.notes").value("Allergic to chicken"))
                 .andExpect(jsonPath("$.paidAt").value(nullValue()))
@@ -50,7 +50,7 @@ class CreateBookingTest extends DatabaseTest {
 
     @Test
     void createsNewClientAndDogWithSeveralStays() throws Exception {
-        ResultActions result = postJson("/bookings", TestRequests.load("bookings/create-new-client-new-dog.json"));
+        ResultActions result = postJson("/api/bookings", TestRequests.load("bookings/create-new-client-new-dog.json"));
 
         result.andExpect(status().isCreated())
                 .andExpect(jsonPath("$.client.id").isNumber())
@@ -72,7 +72,7 @@ class CreateBookingTest extends DatabaseTest {
 
     @Test
     void staysInResponseAreSortedByDropOffDate() throws Exception {
-        postJson("/bookings", TestRequests.load("bookings/create-stays-out-of-date-order.json"))
+        postJson("/api/bookings", TestRequests.load("bookings/create-stays-out-of-date-order.json"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.stays.length()").value(2))
                 .andExpect(jsonPath("$.stays[0].dropOffDate").value("2026-11-02"))
@@ -81,7 +81,7 @@ class CreateBookingTest extends DatabaseTest {
 
     @Test
     void acceptsValuesAtTheLimits() throws Exception {
-        ResultActions result = postJson("/bookings", TestRequests.load("bookings/create-at-limits.json"));
+        ResultActions result = postJson("/api/bookings", TestRequests.load("bookings/create-at-limits.json"));
 
         result.andExpect(status().isCreated())
                 .andExpect(jsonPath("$.stays.length()").value(31))

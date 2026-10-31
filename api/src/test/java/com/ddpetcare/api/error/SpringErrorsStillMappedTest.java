@@ -11,14 +11,14 @@ class SpringErrorsStillMappedTest extends DatabaseTest {
 
     @Test
     void malformedPathVariableIsBadRequestNotServerError() throws Exception {
-        getJson("/bookings/abc")
+        getJson("/api/bookings/abc")
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400));
     }
 
     @Test
     void unsupportedMethodIsMethodNotAllowed() throws Exception {
-        mvc.perform(MockMvcRequestBuilders.delete("/bookings"))
+        mvc.perform(MockMvcRequestBuilders.delete("/api/bookings"))
                 .andExpect(status().isMethodNotAllowed());
     }
 }

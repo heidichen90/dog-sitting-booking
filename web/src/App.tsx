@@ -1,7 +1,10 @@
-import { useState, type SyntheticEvent } from 'react'
+import { useEffect, useState, type SyntheticEvent } from 'react'
 import {
+  Alert,
   AppBar,
   Box,
+  Button,
+  CircularProgress,
   Container,
   Paper,
   Tab,
@@ -13,28 +16,71 @@ import PetsIcon from '@mui/icons-material/Pets'
 import BookingForm from './components/BookingForm.tsx'
 import Confirmation from './components/Confirmation.tsx'
 import BookingHistory from './components/BookingHistory.tsx'
-import { getBookings, saveBooking, deleteBooking } from './storage.ts'
-import type { Booking } from './types'
+import { ApiError, cancelBooking, listBookings, listClients } from './api/client.ts'
+import type { Booking, Client } from './types'
+
+function problemTitle(err: unknown): string {
+  return err instanceof ApiError ? err.title : 'Something went wrong'
+}
 
 export default function App() {
   const [tab, setTab] = useState(0)
-  const [confirmed, setConfirmed] = useState<Booking[] | null>(null)
-  const [bookings, setBookings] = useState<Booking[]>(getBookings)
+  const [confirmed, setConfirmed] = useState<Booking | null>(null)
+  const [clients, setClients] = useState<Client[]>([])
+  const [bookings, setBookings] = useState<Booking[]>([])
+  const [loaded, setLoaded] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [cancelError, setCancelError] = useState<string | null>(null)
+  const [reloadKey, setReloadKey] = useState(0)
 
-  function handleSubmit(bookings: Booking[]) {
-    bookings.forEach((b) => saveBooking(b))
-    setBookings(getBookings())
-    setConfirmed(bookings)
+  useEffect(() => {
+    let ignore = false
+    Promise.all([listClients(), listBookings()]).then(
+      ([loadedClients, loadedBookings]) => {
+        if (ignore) return
+        setClients(loadedClients)
+        setBookings(loadedBookings)
+        setLoaded(true)
+        setError(null)
+      },
+      (err: unknown) => {
+        if (!ignore) setError(problemTitle(err))
+      },
+    )
+    return () => {
+      ignore = true
+    }
+  }, [reloadKey])
+
+  function reload() {
+    setReloadKey((k) => k + 1)
+  }
+
+  function handleCreated(booking: Booking) {
+    setConfirmed(booking)
+    reload()
   }
 
   function handleNewBooking() {
     setConfirmed(null)
   }
 
-  function handleDelete(id: number) {
-    deleteBooking(id)
-    setBookings(getBookings())
+  async function handleCancel(id: number) {
+    setCancelError(null)
+    try {
+      await cancelBooking(id)
+      reload()
+    } catch (err) {
+      setCancelError(`Couldn't cancel the booking: ${problemTitle(err)}`)
+    }
   }
+
+  function handleRetry() {
+    setError(null)
+    reload()
+  }
+
+  const confirmedCount = bookings.filter((b) => b.status === 'confirmed').length
 
   return (
     <>
@@ -49,32 +95,54 @@ export default function App() {
         </Toolbar>
       </AppBar>
 
-      <Box
-        sx={{ bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider' }}
-      >
+      <Box sx={{ bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider' }}>
         <Container maxWidth="sm">
           <Tabs value={tab} onChange={(_: SyntheticEvent, v: number) => setTab(v)}>
             <Tab label="New Booking" />
-            <Tab label={`History (${bookings.length})`} />
+            <Tab label={`History (${confirmedCount})`} />
           </Tabs>
         </Container>
       </Box>
 
       <Box sx={{ bgcolor: 'background.default', minHeight: 'calc(100vh - 112px)' }}>
         <Container maxWidth="sm" sx={{ py: 3 }}>
-          {tab === 0 && (
+          {error && (
+            <Alert
+              severity="error"
+              sx={{ mb: 2 }}
+              action={
+                <Button color="inherit" size="small" onClick={handleRetry}>
+                  Retry
+                </Button>
+              }
+            >
+              {error}
+            </Alert>
+          )}
+
+          {cancelError && (
+            <Alert severity="error" sx={{ mb: 2 }} onClose={() => setCancelError(null)}>
+              {cancelError}
+            </Alert>
+          )}
+
+          {!loaded && !error && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+              <CircularProgress aria-label="Loading" />
+            </Box>
+          )}
+
+          {loaded && tab === 0 && (
             <Paper variant="outlined" sx={{ p: 3, borderRadius: 3 }}>
               {confirmed ? (
-                <Confirmation bookings={confirmed} onNewBooking={handleNewBooking} />
+                <Confirmation booking={confirmed} onNewBooking={handleNewBooking} />
               ) : (
-                <BookingForm onSubmit={handleSubmit} />
+                <BookingForm clients={clients} onCreated={handleCreated} />
               )}
             </Paper>
           )}
 
-          {tab === 1 && (
-            <BookingHistory bookings={bookings} onDelete={handleDelete} />
-          )}
+          {loaded && tab === 1 && <BookingHistory bookings={bookings} onCancel={handleCancel} />}
         </Container>
       </Box>
     </>

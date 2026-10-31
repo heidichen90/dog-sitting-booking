@@ -45,7 +45,7 @@ class CreateBookingValidationTest extends DatabaseTest {
             "create-dropoff-year-out-of-range.json | stays[0].dropOffDate | must be between 2000 and 2100",
     })
     void rejectsInvalidRequest(String file, String field, String message) throws Exception {
-        postJson("/bookings", TestRequests.load("bookings/" + file.strip()))
+        postJson("/api/bookings", TestRequests.load("bookings/" + file.strip()))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.title").value("Invalid request"))
                 .andExpect(jsonPath("$.errors[?(@.field == '" + field.strip() + "')].message")
@@ -57,7 +57,7 @@ class CreateBookingValidationTest extends DatabaseTest {
     @ParameterizedTest
     @ValueSource(strings = {"create-malformed.json", "create-time-with-seconds.json", "create-bad-date.json"})
     void rejectsUnreadableBody(String file) throws Exception {
-        postJson("/bookings", TestRequests.load("bookings/" + file))
+        postJson("/api/bookings", TestRequests.load("bookings/" + file))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.title").value("Invalid request"))
                 .andExpect(jsonPath("$.detail").value(not(containsStringIgnoringCase("json"))))

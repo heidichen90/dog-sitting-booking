@@ -28,7 +28,7 @@ class CancelBookingTest extends DatabaseTest {
 
     @Test
     void cancelsTheBooking() throws Exception {
-        postEmpty("/bookings/" + booking + "/cancel")
+        postEmpty("/api/bookings/" + booking + "/cancel")
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(booking))
                 .andExpect(jsonPath("$.status").value("cancelled"));
@@ -40,20 +40,20 @@ class CancelBookingTest extends DatabaseTest {
 
     @Test
     void cancellingTwiceIsHarmless() throws Exception {
-        postEmpty("/bookings/" + booking + "/cancel").andExpect(status().isOk());
+        postEmpty("/api/bookings/" + booking + "/cancel").andExpect(status().isOk());
 
-        postEmpty("/bookings/" + booking + "/cancel")
+        postEmpty("/api/bookings/" + booking + "/cancel")
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("cancelled"));
     }
 
     @Test
     void secondCancelDoesNotBumpUpdatedAt() throws Exception {
-        postEmpty("/bookings/" + booking + "/cancel").andExpect(status().isOk());
+        postEmpty("/api/bookings/" + booking + "/cancel").andExpect(status().isOk());
         flushAndClear();
         jdbc.sql("UPDATE bookings SET updated_at = '2000-01-01T00:00:00Z' WHERE id = ?").param(booking).update();
 
-        postEmpty("/bookings/" + booking + "/cancel").andExpect(status().isOk());
+        postEmpty("/api/bookings/" + booking + "/cancel").andExpect(status().isOk());
 
         flushAndClear();
         Instant updatedAt = jdbc.sql("SELECT updated_at FROM bookings WHERE id = ?").param(booking)
@@ -63,10 +63,10 @@ class CancelBookingTest extends DatabaseTest {
 
     @Test
     void cancellingCancelsEveryStay() throws Exception {
-        long id = idOf(postJson("/bookings", TestRequests.load("bookings/create-new-client-new-dog.json"))
+        long id = idOf(postJson("/api/bookings", TestRequests.load("bookings/create-new-client-new-dog.json"))
                 .andExpect(status().isCreated()));
 
-        postEmpty("/bookings/" + id + "/cancel")
+        postEmpty("/api/bookings/" + id + "/cancel")
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("cancelled"))
                 .andExpect(jsonPath("$.stays.length()").value(2))
@@ -83,7 +83,7 @@ class CancelBookingTest extends DatabaseTest {
     void cancelUpdatesUpdatedAt() throws Exception {
         jdbc.sql("UPDATE bookings SET updated_at = '2000-01-01T00:00:00Z' WHERE id = ?").param(booking).update();
 
-        postEmpty("/bookings/" + booking + "/cancel").andExpect(status().isOk());
+        postEmpty("/api/bookings/" + booking + "/cancel").andExpect(status().isOk());
 
         flushAndClear();
         Instant updatedAt = jdbc.sql("SELECT updated_at FROM bookings WHERE id = ?").param(booking)
@@ -93,16 +93,16 @@ class CancelBookingTest extends DatabaseTest {
 
     @Test
     void cancelledBookingStillAppearsInList() throws Exception {
-        postEmpty("/bookings/" + booking + "/cancel").andExpect(status().isOk());
+        postEmpty("/api/bookings/" + booking + "/cancel").andExpect(status().isOk());
 
-        getJson("/bookings")
+        getJson("/api/bookings")
                 .andExpect(jsonPath("$[0].id").value(booking))
                 .andExpect(jsonPath("$[0].status").value("cancelled"));
     }
 
     @Test
     void unknownBookingIsNotFound() throws Exception {
-        postEmpty("/bookings/999999999/cancel")
+        postEmpty("/api/bookings/999999999/cancel")
                 .andExpect(status().isNotFound());
     }
 }

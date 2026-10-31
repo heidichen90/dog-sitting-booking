@@ -17,3 +17,9 @@ management:
     web:
       exposure:
         include: health
+
+springdoc:
+  api-docs:
+    version: openapi_3_1
+  default-produces-media-type: application/json
+  override-with-generic-response: false

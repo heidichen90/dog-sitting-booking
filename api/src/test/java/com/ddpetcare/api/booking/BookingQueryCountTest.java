@@ -42,7 +42,7 @@ class BookingQueryCountTest extends DatabaseTest {
         em.clear();
         Statistics statistics = entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
         statistics.clear();
-        getJson("/bookings").andExpect(status().isOk());
+        getJson("/api/bookings").andExpect(status().isOk());
         return statistics.getPrepareStatementCount();
     }
 }

@@ -88,10 +88,10 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         return handleExceptionInternal(ex, problem, headers, HttpStatus.BAD_REQUEST, request);
     }
 
-    record FieldError(String field, String message) {
+    public record FieldError(String field, String message) {
     }
 
-    record ExistingClient(long id, String name) {
+    public record ExistingClient(long id, String name) {
     }
 
     private static ProblemDetail problem(HttpStatus status, String title, String detail) {
