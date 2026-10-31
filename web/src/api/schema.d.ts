@@ -4,6 +4,23 @@
  */
 
 export interface paths {
+    "/api/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Log in as the owner; sets the SESSION cookie */
+        post: operations["login"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/bookings": {
         parameters: {
             query?: never;
@@ -33,6 +50,23 @@ export interface paths {
         put?: never;
         /** Cancel a booking and all its stays */
         post: operations["cancelBooking"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The logged-in owner */
+        get: operations["getMe"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -77,6 +111,33 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        LoginRequest: {
+            username: string;
+            password: string;
+        };
+        FieldError: {
+            field: string;
+            message: string;
+        };
+        /** @description A 400. errors lists each invalid field; it's absent for an unreadable body or a business-rule 400 (for example a dog that belongs to another client) */
+        ValidationProblem: {
+            type?: string;
+            title: string;
+            /** Format: int32 */
+            status: number;
+            detail: string;
+            instance: string;
+            errors?: components["schemas"]["FieldError"][];
+        };
+        /** @description An error (RFC 9457 problem detail) */
+        Problem: {
+            type?: string;
+            title: string;
+            /** Format: int32 */
+            status: number;
+            detail: string;
+            instance: string;
+        };
         ClientRef: {
             /** Format: int64 */
             id?: number;
@@ -151,29 +212,6 @@ export interface components {
             /** @enum {string} */
             status: "confirmed" | "cancelled";
         };
-        FieldError: {
-            field: string;
-            message: string;
-        };
-        /** @description A 400. errors lists each invalid field; it's absent for an unreadable body or a business-rule 400 (for example a dog that belongs to another client) */
-        ValidationProblem: {
-            type?: string;
-            title: string;
-            /** Format: int32 */
-            status: number;
-            detail: string;
-            instance: string;
-            errors?: components["schemas"]["FieldError"][];
-        };
-        /** @description An error (RFC 9457 problem detail) */
-        Problem: {
-            type?: string;
-            title: string;
-            /** Format: int32 */
-            status: number;
-            detail: string;
-            instance: string;
-        };
         /** @description A 409. existingClient is the client who has the phone; absent if two creates raced */
         ConflictProblem: {
             type?: string;
@@ -188,6 +226,9 @@ export interface components {
             /** Format: int64 */
             id: number;
             name: string;
+        };
+        MeResponse: {
+            username: string;
         };
         ClientResponse: {
             /** Format: int64 */
@@ -210,6 +251,55 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    login: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoginRequest"];
+            };
+        };
+        responses: {
+            /** @description Logged in */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Blank or oversized username or password */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ValidationProblem"];
+                };
+            };
+            /** @description Wrong username or password */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description 5 failed logins in 15 minutes; try again later */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     listBookings: {
         parameters: {
             query?: never;
@@ -310,6 +400,26 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    getMe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The owner */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeResponse"];
                 };
             };
         };

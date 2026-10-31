@@ -12,8 +12,11 @@ const problemHeaders = { 'Content-Type': 'application/problem+json' }
 
 function renderForm(clientList: Client[] = clients) {
   const onCreated = vi.fn()
-  render(<BookingForm clients={clientList} onCreated={onCreated} />, { wrapper: Providers })
-  return { user: userEvent.setup(), onCreated }
+  const onUnauthorized = vi.fn()
+  render(<BookingForm clients={clientList} onCreated={onCreated} onUnauthorized={onUnauthorized} />, {
+    wrapper: Providers,
+  })
+  return { user: userEvent.setup(), onCreated, onUnauthorized }
 }
 
 function captureCreate(): CreateBookingRequest[] {
@@ -39,7 +42,7 @@ function fillDay(day: number, dropOff: string, pickUp: string) {
 
 const owner = () => screen.getByRole('combobox', { name: 'Owner' }) as HTMLInputElement
 const dog = () => screen.getByRole('combobox', { name: 'Dog' }) as HTMLInputElement
-const phone = () => screen.queryByLabelText('Phone (optional)') as HTMLInputElement | null
+const phone = () => screen.queryByLabelText(/Phone/)
 
 async function pickClient(user: UserEvent, typed: string, name: string) {
   await user.type(owner(), typed)
@@ -118,34 +121,19 @@ describe('client and dog pickers', () => {
     })
   })
 
-  it('reveals Phone for a new client and sends name and phone', async () => {
+  it('has no Phone field and sends a new client by name only', async () => {
     const requests = captureCreate()
     const { user } = renderForm()
-    expect(phone()).toBeNull()
 
     await user.type(owner(), 'Jane Doe')
-    await user.type(phone() as HTMLInputElement, '07700 900456')
+    expect(phone()).toBeNull()
     await user.type(dog(), 'Rolo')
     fillDay(0, '02/11/2030', '02/11/2030')
     await submit(user)
 
     await waitFor(() => expect(requests).toHaveLength(1))
-    expect(requests[0].client).toEqual({ name: 'Jane Doe', phone: '+447700900456' })
+    expect(requests[0].client).toEqual({ name: 'Jane Doe' })
     expect(requests[0].dog).toEqual({ name: 'Rolo' })
-  })
-
-  it('rejects a phone that is not a UK mobile or international number, sending nothing', async () => {
-    const requests = captureCreate()
-    const { user } = renderForm()
-
-    await user.type(owner(), 'Jane Doe')
-    await user.type(phone() as HTMLInputElement, '020 7946 0000')
-    await user.type(dog(), 'Rolo')
-    fillDay(0, '02/11/2030', '02/11/2030')
-    await submit(user)
-
-    expect(await screen.findByText('Enter a UK mobile or international number')).toBeTruthy()
-    expect(requests).toHaveLength(0)
   })
 
   it("lists only the chosen client's dogs", async () => {
@@ -168,7 +156,7 @@ describe('client and dog pickers', () => {
     expect(screen.queryByRole('option', { name: 'Rex' })).toBeNull()
   })
 
-  it('treats an edited client name as a new client: Phone appears and the dog on file is dropped', async () => {
+  it('treats an edited client name as a new client and drops the dog on file', async () => {
     const { user } = renderForm()
 
     await pickClient(user, 'sar', 'Sarah Lee')
@@ -178,7 +166,7 @@ describe('client and dog pickers', () => {
     await user.type(owner(), 'x')
 
     expect(owner().value).toBe('Sarah Leex')
-    expect(phone()).toBeTruthy()
+    expect(phone()).toBeNull()
     expect(dog().value).toBe('')
   })
 })
@@ -218,13 +206,12 @@ describe('duplicate-client warning', () => {
     const { user } = renderForm()
 
     await user.type(owner(), messySarah)
-    await user.type(phone() as HTMLInputElement, '07700 900999')
     await user.type(dog(), 'Biscuit')
     fillDay(0, '02/11/2030', '04/11/2030')
     await submit(user)
 
     await waitFor(() => expect(requests).toHaveLength(1))
-    expect(requests[0].client).toEqual({ name: 'sarah   LEE', phone: '+447700900999' })
+    expect(requests[0].client).toEqual({ name: 'sarah   LEE' })
     expect(requests[0].dog).toEqual({ name: 'Biscuit' })
   })
 
@@ -347,44 +334,60 @@ describe('errors from the API', () => {
     expect(helperOf('Overnight Rate')).toBeUndefined()
   })
 
-  it('offers to switch to the client who has the phone (409), sending nothing until resubmitted', async () => {
-    const requests: CreateBookingRequest[] = []
+  it('hands a 401 to the app instead of showing it in the form', async () => {
     server.use(
-      http.post('/api/bookings', async ({ request }) => {
-        const body = (await request.json()) as CreateBookingRequest
-        requests.push(body)
-        if (body.client.id === undefined) {
-          return HttpResponse.json(
-            {
-              status: 409,
-              title: 'Phone already on file',
-              detail: 'This phone number already belongs to Sarah Lee. Book for that client instead.',
-              existingClient: { id: 1, name: 'Sarah Lee' },
-            },
-            { status: 409, headers: problemHeaders },
-          )
-        }
-        return HttpResponse.json(booking, { status: 201 })
-      }),
+      http.post('/api/bookings', () =>
+        HttpResponse.json({ status: 401, title: 'Not logged in' }, { status: 401, headers: problemHeaders }),
+      ),
     )
-    const { user, onCreated } = renderForm()
+    const { user, onUnauthorized } = renderForm()
 
-    await user.type(owner(), 'S Lee')
-    await user.type(phone() as HTMLInputElement, '07700900123')
-    await user.type(dog(), 'Biscuit')
+    await pickClient(user, 'sar', 'Sarah Lee')
+    await pickDog(user, 'bis', 'Biscuit')
     fillDay(0, '02/11/2030', '04/11/2030')
     await submit(user)
 
-    expect(await screen.findByText(/This number belongs to/)).toBeTruthy()
-    await user.click(screen.getByRole('button', { name: 'Use Sarah Lee' }))
-    expect(owner().value).toBe('Sarah Lee')
-    expect(phone()).toBeNull()
-    expect(requests).toHaveLength(1)
+    await waitFor(() => expect(onUnauthorized).toHaveBeenCalled())
+    expect(screen.queryByRole('alert')).toBeNull()
+  })
 
+  it('checks the session on a 403 and hands an ended session to the app', async () => {
+    server.use(
+      http.post('/api/bookings', () =>
+        HttpResponse.json({ status: 403, title: 'Forbidden' }, { status: 403, headers: problemHeaders }),
+      ),
+      http.get('/api/me', () =>
+        HttpResponse.json({ status: 401, title: 'Not logged in' }, { status: 401, headers: problemHeaders }),
+      ),
+    )
+    const { user, onUnauthorized } = renderForm()
+
+    await pickClient(user, 'sar', 'Sarah Lee')
+    await pickDog(user, 'bis', 'Biscuit')
+    fillDay(0, '02/11/2030', '04/11/2030')
     await submit(user)
-    await waitFor(() => expect(onCreated).toHaveBeenCalledWith(booking))
-    expect(requests[1].client).toEqual({ id: 1 })
-    expect(requests[1].dog).toEqual({ name: 'Biscuit' })
+
+    await waitFor(() => expect(onUnauthorized).toHaveBeenCalled())
+    expect(screen.queryByRole('alert')).toBeNull()
+  })
+
+  it('shows a 403 as usual when the session is still valid', async () => {
+    server.use(
+      http.post('/api/bookings', () =>
+        HttpResponse.json({ status: 403, title: 'Forbidden' }, { status: 403, headers: problemHeaders }),
+      ),
+      http.get('/api/me', () => HttpResponse.json({ username: 'ddpetcare' })),
+    )
+    const { user, onUnauthorized } = renderForm()
+
+    await pickClient(user, 'sar', 'Sarah Lee')
+    await pickDog(user, 'bis', 'Biscuit')
+    fillDay(0, '02/11/2030', '04/11/2030')
+    await submit(user)
+
+    const banner = await screen.findByRole('alert')
+    expect(within(banner).getByText('Forbidden')).toBeTruthy()
+    expect(onUnauthorized).not.toHaveBeenCalled()
   })
 
   it('keeps everything typed when the network fails', async () => {

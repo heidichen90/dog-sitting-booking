@@ -10,7 +10,6 @@ export type Dog = Schemas['DogResponse']
 export type CreateBookingRequest = Schemas['CreateBookingRequest']
 export type StayRequest = Schemas['StayRequest']
 export type FieldError = Schemas['FieldError']
-export type ExistingClient = Schemas['ExistingClient']
 export type Service = Stay['service']
 
 /** One day being filled in on the form, before submission. */
@@ -31,7 +30,6 @@ export type DogChoice = { kind: 'existing'; dog: Dog } | { kind: 'new'; name: st
 /** Fields shared by every day of one booking. */
 export interface SharedBookingFields {
   client: ClientChoice | null
-  phone: string
   dog: DogChoice | null
   notes: string
   dayRate: number | string
@@ -40,7 +38,6 @@ export interface SharedBookingFields {
 
 export interface SharedFieldErrors {
   client?: string
-  phone?: string
   dog?: string
   notes?: string
   dayRate?: string

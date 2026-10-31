@@ -1,8 +1,8 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { http, HttpResponse } from 'msw'
 import { server } from '../test/server.ts'
 import { booking, clients } from '../test/fixtures.ts'
-import { ApiError, cancelBooking, createBooking, listBookings, listClients } from './client.ts'
+import { ApiError, cancelBooking, createBooking, listBookings, listClients, login, logout, me } from './client.ts'
 import type { components } from './schema'
 
 const request: components['schemas']['CreateBookingRequest'] = {
@@ -186,5 +186,121 @@ describe('api client', () => {
     const err = await failure(listBookings())
     expect(err.status).toBe(503)
     expect(err.title).toBe('Maintenance')
+  })
+})
+
+describe('login, session and CSRF', () => {
+  afterEach(() => {
+    document.cookie = 'XSRF-TOKEN=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+    document.cookie = 'XSRF-TOKEN2=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+  })
+
+  function captureLogoutHeader(): { value: string | null } {
+    const header: { value: string | null } = { value: 'unset' }
+    server.use(
+      http.post('/api/logout', ({ request }) => {
+        header.value = request.headers.get('X-XSRF-TOKEN')
+        return new HttpResponse(null, { status: 204 })
+      }),
+    )
+    return header
+  }
+
+  it('ignores a lookalike cookie and sends the real token', async () => {
+    document.cookie = 'XSRF-TOKEN2=bad; path=/'
+    document.cookie = 'XSRF-TOKEN=real; path=/'
+    const header = captureLogoutHeader()
+
+    await logout()
+
+    expect(header.value).toBe('real')
+  })
+
+  it('URL-decodes the token', async () => {
+    document.cookie = 'XSRF-TOKEN=a%2Bb; path=/'
+    const header = captureLogoutHeader()
+
+    await logout()
+
+    expect(header.value).toBe('a+b')
+  })
+
+  it('sends no token, and still makes the call, when the cookie cannot be decoded', async () => {
+    document.cookie = 'XSRF-TOKEN=%E0%A4%A; path=/'
+    const header = captureLogoutHeader()
+
+    await logout()
+
+    expect(header.value).toBeNull()
+  })
+
+  it('copies the XSRF-TOKEN cookie into X-XSRF-TOKEN on a POST, but not on a GET', async () => {
+    document.cookie = 'XSRF-TOKEN=token-123; path=/'
+    let postHeader: string | null = 'unset'
+    let getHeader: string | null = 'unset'
+    server.use(
+      http.post('/api/bookings/:id/cancel', ({ request }) => {
+        postHeader = request.headers.get('X-XSRF-TOKEN')
+        return HttpResponse.json(booking)
+      }),
+      http.get('/api/bookings', ({ request }) => {
+        getHeader = request.headers.get('X-XSRF-TOKEN')
+        return HttpResponse.json([])
+      }),
+    )
+
+    await cancelBooking(12)
+    await listBookings()
+
+    expect(postHeader).toBe('token-123')
+    expect(getHeader).toBeNull()
+  })
+
+  it('sends no X-XSRF-TOKEN when there is no cookie', async () => {
+    let header: string | null = 'unset'
+    server.use(
+      http.post('/api/logout', ({ request }) => {
+        header = request.headers.get('X-XSRF-TOKEN')
+        return new HttpResponse(null, { status: 204 })
+      }),
+    )
+
+    await logout()
+
+    expect(header).toBeNull()
+  })
+
+  it('returns the logged-in username from /api/me', async () => {
+    server.use(http.get('/api/me', () => HttpResponse.json({ username: 'ddpetcare' })))
+
+    expect(await me()).toEqual({ username: 'ddpetcare' })
+  })
+
+  it('posts the credentials and resolves on 204', async () => {
+    let sent: unknown
+    server.use(
+      http.post('/api/login', async ({ request }) => {
+        sent = await request.json()
+        return new HttpResponse(null, { status: 204 })
+      }),
+    )
+
+    await expect(login({ username: 'ddpetcare', password: 'secret' })).resolves.toBeUndefined()
+    expect(sent).toEqual({ username: 'ddpetcare', password: 'secret' })
+  })
+
+  it('turns a failed login into an ApiError with the title', async () => {
+    server.use(
+      http.post('/api/login', () =>
+        HttpResponse.json(
+          { status: 401, title: 'Invalid username or password' },
+          { status: 401, headers: problemHeaders },
+        ),
+      ),
+    )
+
+    const err = await failure(login({ username: 'ddpetcare', password: 'wrong' }))
+    expect(err.status).toBe(401)
+    expect(err.title).toBe('Invalid username or password')
   })
 })

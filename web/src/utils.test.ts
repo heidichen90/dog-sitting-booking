@@ -18,7 +18,6 @@ function day(dropOff: string, pickUp: string, overrides: Partial<BookingDraft> =
 
 const input: BookingRequestInput = {
   client: { kind: 'existing', client: sarah },
-  phone: null,
   dog: { kind: 'existing', dog: sarah.dogs[0] },
   notes: '',
   dayRate: 35,
@@ -41,20 +40,14 @@ describe('buildCreateRequest', () => {
     expect(request.dog).toEqual({ id: 11 })
   })
 
-  it('sends a new client with phone and a new dog by name, trimmed', () => {
+  it('sends a new client and a new dog by name only, trimmed', () => {
     const request = buildCreateRequest({
       ...input,
       client: { kind: 'new', name: ' Jane Doe ' },
-      phone: '+447700900456',
       dog: { kind: 'new', name: 'Rolo ' },
     })
-    expect(request.client).toEqual({ name: 'Jane Doe', phone: '+447700900456' })
-    expect(request.dog).toEqual({ name: 'Rolo' })
-  })
-
-  it('leaves phone out for a new client without one', () => {
-    const request = buildCreateRequest({ ...input, client: { kind: 'new', name: 'Jane Doe' } })
     expect(request.client).toEqual({ name: 'Jane Doe' })
+    expect(request.dog).toEqual({ name: 'Rolo' })
   })
 
   it('uses the day rate for day care', () => {
@@ -125,7 +118,6 @@ describe('mapFieldErrors', () => {
     )
 
     expect(mapped.shared).toEqual({
-      phone: 'bad phone',
       dog: 'give either id or name',
       notes: 'too long',
       dayRate: 'day rate too big',
@@ -133,7 +125,7 @@ describe('mapFieldErrors', () => {
     })
     expect(mapped.entries).toEqual({ 7: { pickupDropoff: 'negative' }, 8: { pickUp: 'too many nights' } })
     expect(mapped.stays).toBe('must not be empty')
-    expect(mapped.unmapped).toEqual(['somethingElse: odd'])
+    expect(mapped.unmapped).toEqual(['client.phone: bad phone', 'somethingElse: odd'])
   })
 })
 
