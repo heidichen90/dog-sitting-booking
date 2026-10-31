@@ -16,6 +16,7 @@ import com.ddpetcare.api.TestRequests;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -29,9 +30,13 @@ class LoginTest extends DatabaseTest {
 
     private static final int THIRTY_DAYS = 30 * 24 * 60 * 60;
 
+    @Autowired
+    private LoginThrottle throttle;
+
     @AfterEach
     void cleanUp() {
         jdbc.sql("DELETE FROM spring_session").update();
+        throttle.recordSuccess();
     }
 
     private Cookie loginAsOwner() throws Exception {
@@ -185,5 +190,27 @@ class LoginTest extends DatabaseTest {
         assertThat(second.getValue()).isNotEqualTo(first.getValue());
         mvc.perform(get("/api/me").cookie(first)).andExpect(status().isUnauthorized());
         mvc.perform(get("/api/me").cookie(second)).andExpect(status().isOk());
+    }
+
+    @Test
+    void fiveFailuresBlockTheNextAttemptEvenWithTheRightPassword() throws Exception {
+        for (int i = 0; i < 5; i++) {
+            login(OWNER, "wrong-password").andExpect(status().isUnauthorized());
+        }
+
+        login(OWNER, OWNER_PASSWORD)
+                .andExpect(status().isTooManyRequests())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.title").value("Too many attempts, try again later"))
+                .andExpect(cookie().doesNotExist("SESSION"));
+    }
+
+    @Test
+    void validationFailuresDoNotCountTowardsTheThrottle() throws Exception {
+        for (int i = 0; i < 5; i++) {
+            login(OWNER, "").andExpect(status().isBadRequest());
+        }
+
+        login(OWNER, OWNER_PASSWORD).andExpect(status().isNoContent());
     }
 }

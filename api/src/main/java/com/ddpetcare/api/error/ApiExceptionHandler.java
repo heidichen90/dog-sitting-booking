@@ -59,6 +59,12 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         return problem(HttpStatus.FORBIDDEN, "Forbidden", "The request was refused. Reload the page and try again.");
     }
 
+    @ExceptionHandler(LoginThrottledException.class)
+    ProblemDetail loginThrottled() {
+        return problem(HttpStatus.TOO_MANY_REQUESTS, "Too many attempts, try again later",
+                "Login is paused for 15 minutes after 5 failed attempts.");
+    }
+
     // A duplicate phone reaching the database means two creates raced past the service's check.
     @ExceptionHandler(DataIntegrityViolationException.class)
     ProblemDetail dataIntegrity(DataIntegrityViolationException ex) {

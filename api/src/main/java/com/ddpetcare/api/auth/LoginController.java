@@ -42,12 +42,15 @@ import org.springframework.web.bind.annotation.RestController;
 public class LoginController {
 
     private final AuthenticationManager authenticationManager;
+    private final LoginThrottle throttle;
     private final SessionAuthenticationStrategy sessionStrategy;
     private final SecurityContextRepository contextRepository = new HttpSessionSecurityContextRepository();
     private final SecurityContextHolderStrategy contextHolder = SecurityContextHolder.getContextHolderStrategy();
 
-    public LoginController(AuthenticationManager authenticationManager, CsrfTokenRepository csrfTokens) {
+    public LoginController(AuthenticationManager authenticationManager, LoginThrottle throttle,
+                           CsrfTokenRepository csrfTokens) {
         this.authenticationManager = authenticationManager;
+        this.throttle = throttle;
         this.sessionStrategy = new CompositeSessionAuthenticationStrategy(List.of(
                 new ChangeSessionIdAuthenticationStrategy(), new CsrfAuthenticationStrategy(csrfTokens)));
     }
@@ -62,15 +65,21 @@ public class LoginController {
     @ApiResponse(responseCode = "401", description = "Wrong username or password",
             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
                     schema = @Schema(implementation = Problem.class)))
+    @ApiResponse(responseCode = "429", description = "5 failed logins in 15 minutes; try again later",
+            content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+                    schema = @Schema(implementation = Problem.class)))
     public void login(@Valid @RequestBody LoginRequest login, HttpServletRequest request,
                       HttpServletResponse response) {
+        throttle.checkAllowed();
         Authentication authentication;
         try {
             authentication = authenticationManager.authenticate(
                     UsernamePasswordAuthenticationToken.unauthenticated(login.username(), login.password()));
         } catch (AuthenticationException e) {
+            throttle.recordFailure();
             throw new BadCredentialsException("Invalid username or password");
         }
+        throttle.recordSuccess();
         sessionStrategy.onAuthentication(authentication, request, response);
         // The CSRF strategy clears the old XSRF-TOKEN cookie and defers the new token; load it so it's written now.
         ((CsrfToken) request.getAttribute(CsrfToken.class.getName())).getToken();

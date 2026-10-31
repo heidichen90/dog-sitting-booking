@@ -147,6 +147,8 @@ class OpenApiTest extends DatabaseTest {
                 .andExpect(jsonPath("$.paths['/api/login'].post.responses['204']").exists())
                 .andExpect(jsonPath("$.paths['/api/login'].post.responses['401'].content['application/problem+json']")
                         .exists())
+                .andExpect(jsonPath("$.paths['/api/login'].post.responses['429'].content['application/problem+json']")
+                        .exists())
                 .andExpect(jsonPath("$.paths['/api/me'].get.operationId").value("getMe"))
                 .andExpect(jsonPath("$.paths['/api/me'].get.responses['200'].content['application/json'].schema['$ref']")
                         .value("#/components/schemas/MeResponse"))
