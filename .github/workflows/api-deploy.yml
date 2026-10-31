@@ -1,0 +1,71 @@
+name: api-deploy
+
+on:
+  push:
+    # feat/go-live is temporary: remove it (and its Workload Identity permission) before merging.
+    # See docs/runbooks/go-live.md, step 6.
+    branches: [main, feat/go-live]
+    paths: ['api/**']
+  workflow_dispatch:
+
+concurrency:
+  group: api-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  REGION: europe-west2
+  SERVICE: ddpet-api
+  IMAGE: europe-west2-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/ddpet/api:${{ github.sha }}
+
+jobs:
+  test:
+    uses: ./.github/workflows/api.yml
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOYER_SA }}
+
+      - uses: google-github-actions/setup-gcloud@v3
+
+      - name: Build and push the image
+        run: |
+          gcloud auth configure-docker "${REGION}-docker.pkg.dev" --quiet
+          docker build -t "$IMAGE" api
+          docker push "$IMAGE"
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy "$SERVICE" \
+            --image="$IMAGE" \
+            --region="$REGION" \
+            --service-account="${{ vars.GCP_RUNTIME_SA }}" \
+            --min-instances=0 \
+            --max-instances=1 \
+            --memory=512Mi \
+            --cpu=1 \
+            --timeout=60 \
+            --port=8080 \
+            --allow-unauthenticated \
+            --set-env-vars=SPRING_PROFILES_ACTIVE=prod \
+            --set-secrets=DB_URL=ddpet-db-url:latest,DB_USERNAME=ddpet-db-username:latest,DB_PASSWORD=ddpet-db-password:latest,OWNER_USERNAME=ddpet-owner-username:latest,OWNER_PASSWORD_HASH=ddpet-owner-password-hash:latest \
+            --quiet
+
+      - name: Smoke-test the health check
+        run: |
+          url=$(gcloud run services describe "$SERVICE" --region="$REGION" --format='value(status.url)')
+          curl --fail --silent --show-error --retry 5 --retry-delay 10 --retry-all-errors --max-time 60 \
+            "$url/actuator/health" | grep -q '"status":"UP"'
+          echo "Healthy: $url/actuator/health"
