@@ -68,7 +68,6 @@ export function priceBreakdown(
 
 export interface BookingRequestInput {
   client: ClientChoice;
-  phone: string | null;
   dog: DogChoice;
   notes: string;
   dayRate: number;
@@ -76,10 +75,8 @@ export interface BookingRequestInput {
   entries: BookingDraft[];
 }
 
-function clientRef(client: ClientChoice, phone: string | null): CreateBookingRequest["client"] {
-  if (client.kind === "existing") return { id: client.client.id };
-  const name = client.name.trim();
-  return phone ? { name, phone } : { name };
+function clientRef(client: ClientChoice): CreateBookingRequest["client"] {
+  return client.kind === "existing" ? { id: client.client.id } : { name: client.name.trim() };
 }
 
 function dogRef(dog: DogChoice): CreateBookingRequest["dog"] {
@@ -102,7 +99,7 @@ function toStayRequest(entry: BookingDraft, dayRate: number, overnightRate: numb
 export function buildCreateRequest(input: BookingRequestInput): CreateBookingRequest {
   const notes = input.notes.trim();
   return {
-    client: clientRef(input.client, input.phone),
+    client: clientRef(input.client),
     dog: dogRef(input.dog),
     notes: notes || null,
     stays: input.entries.map((entry) => toStayRequest(entry, input.dayRate, input.overnightRate)),
@@ -119,7 +116,6 @@ export interface MappedErrors {
 const SHARED_TARGETS = new Map<string, keyof SharedFieldErrors>([
   ["client", "client"],
   ["client.name", "client"],
-  ["client.phone", "phone"],
   ["dog", "dog"],
   ["dog.name", "dog"],
   ["notes", "notes"],

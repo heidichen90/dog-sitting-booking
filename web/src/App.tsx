@@ -1,4 +1,4 @@
-import { useEffect, useState, type SyntheticEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type SyntheticEvent } from 'react'
 import {
   Alert,
   AppBar,
@@ -16,14 +16,26 @@ import PetsIcon from '@mui/icons-material/Pets'
 import BookingForm from './components/BookingForm.tsx'
 import Confirmation from './components/Confirmation.tsx'
 import BookingHistory from './components/BookingHistory.tsx'
-import { ApiError, cancelBooking, listBookings, listClients } from './api/client.ts'
+import LoginPage from './components/LoginPage.tsx'
+import { ApiError, cancelBooking, hasSessionEnded, listBookings, listClients, logout, me } from './api/client.ts'
 import type { Booking, Client } from './types'
+
+type Session = 'checking' | 'loggedOut' | 'loggedIn'
 
 function problemTitle(err: unknown): string {
   return err instanceof ApiError ? err.title : 'Something went wrong'
 }
 
+function isUnauthorized(err: unknown): boolean {
+  return err instanceof ApiError && err.status === 401
+}
+
 export default function App() {
+  const [session, setSession] = useState<Session>('checking')
+  const [sessionEnded, setSessionEnded] = useState(false)
+  // False from logout until the next login, so calls still in flight from the old session change nothing.
+  const active = useRef(false)
+  const [sessionCheck, setSessionCheck] = useState(0)
   const [tab, setTab] = useState(0)
   const [confirmed, setConfirmed] = useState<Booking | null>(null)
   const [clients, setClients] = useState<Client[]>([])
@@ -33,7 +45,47 @@ export default function App() {
   const [cancelError, setCancelError] = useState<string | null>(null)
   const [reloadKey, setReloadKey] = useState(0)
 
+  // Drops everything loaded for the owner, so nothing sensitive stays in memory behind the login page.
+  const signOut = useCallback(() => {
+    active.current = false
+    setSession('loggedOut')
+    setSessionEnded(false)
+    setTab(0)
+    setConfirmed(null)
+    setClients([])
+    setBookings([])
+    setLoaded(false)
+    setError(null)
+    setCancelError(null)
+  }, [])
+
+  const sessionExpired = useCallback(() => {
+    if (!active.current) return
+    signOut()
+    setSessionEnded(true)
+  }, [signOut])
+
   useEffect(() => {
+    let ignore = false
+    me().then(
+      () => {
+        if (ignore) return
+        active.current = true
+        setSession('loggedIn')
+      },
+      (err: unknown) => {
+        if (ignore) return
+        if (isUnauthorized(err)) setSession('loggedOut')
+        else setError(problemTitle(err))
+      },
+    )
+    return () => {
+      ignore = true
+    }
+  }, [sessionCheck])
+
+  useEffect(() => {
+    if (session !== 'loggedIn') return
     let ignore = false
     Promise.all([listClients(), listBookings()]).then(
       ([loadedClients, loadedBookings]) => {
@@ -44,19 +96,22 @@ export default function App() {
         setError(null)
       },
       (err: unknown) => {
-        if (!ignore) setError(problemTitle(err))
+        if (ignore) return
+        if (isUnauthorized(err)) sessionExpired()
+        else setError(problemTitle(err))
       },
     )
     return () => {
       ignore = true
     }
-  }, [reloadKey])
+  }, [session, reloadKey, sessionExpired])
 
   function reload() {
     setReloadKey((k) => k + 1)
   }
 
   function handleCreated(booking: Booking) {
+    if (!active.current) return
     setConfirmed(booking)
     reload()
   }
@@ -69,15 +124,35 @@ export default function App() {
     setCancelError(null)
     try {
       await cancelBooking(id)
+      if (!active.current) return
       reload()
     } catch (err) {
-      setCancelError(`Couldn't cancel the booking: ${problemTitle(err)}`)
+      const ended = await hasSessionEnded(err)
+      if (!active.current) return
+      if (ended) sessionExpired()
+      else setCancelError(`Couldn't cancel the booking: ${problemTitle(err)}`)
     }
   }
 
   function handleRetry() {
     setError(null)
-    reload()
+    if (session === 'checking') setSessionCheck((k) => k + 1)
+    else reload()
+  }
+
+  function handleLoggedIn() {
+    active.current = true
+    setSessionEnded(false)
+    setSession('loggedIn')
+  }
+
+  async function handleLogout() {
+    try {
+      await logout()
+    } catch {
+      // The session may already be gone; show the login page either way.
+    }
+    signOut()
   }
 
   const confirmedCount = bookings.filter((b) => b.status === 'confirmed').length
@@ -87,22 +162,29 @@ export default function App() {
       <AppBar position="static">
         <Toolbar>
           <PetsIcon sx={{ mr: 1.5 }} />
-          <Box>
+          <Box sx={{ flexGrow: 1 }}>
             <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
               DD PET CARE BOOKING
             </Typography>
           </Box>
+          {session === 'loggedIn' && (
+            <Button color="inherit" onClick={handleLogout}>
+              Log out
+            </Button>
+          )}
         </Toolbar>
       </AppBar>
 
-      <Box sx={{ bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider' }}>
-        <Container maxWidth="sm">
-          <Tabs value={tab} onChange={(_: SyntheticEvent, v: number) => setTab(v)}>
-            <Tab label="New Booking" />
-            <Tab label={`History (${confirmedCount})`} />
-          </Tabs>
-        </Container>
-      </Box>
+      {session === 'loggedIn' && (
+        <Box sx={{ bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider' }}>
+          <Container maxWidth="sm">
+            <Tabs value={tab} onChange={(_: SyntheticEvent, v: number) => setTab(v)}>
+              <Tab label="New Booking" />
+              <Tab label={`History (${confirmedCount})`} />
+            </Tabs>
+          </Container>
+        </Box>
+      )}
 
       <Box sx={{ bgcolor: 'background.default', minHeight: 'calc(100vh - 112px)' }}>
         <Container maxWidth="sm" sx={{ py: 3 }}>
@@ -126,7 +208,15 @@ export default function App() {
             </Alert>
           )}
 
-          {!loaded && !error && (
+          {session === 'loggedOut' && sessionEnded && (
+            <Alert severity="info" sx={{ mb: 2 }}>
+              Your session has ended. Please log in again.
+            </Alert>
+          )}
+
+          {session === 'loggedOut' && <LoginPage onLoggedIn={handleLoggedIn} />}
+
+          {session !== 'loggedOut' && !loaded && !error && (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
               <CircularProgress aria-label="Loading" />
             </Box>
@@ -137,7 +227,7 @@ export default function App() {
               {confirmed ? (
                 <Confirmation booking={confirmed} onNewBooking={handleNewBooking} />
               ) : (
-                <BookingForm clients={clients} onCreated={handleCreated} />
+                <BookingForm clients={clients} onCreated={handleCreated} onUnauthorized={sessionExpired} />
               )}
             </Paper>
           )}

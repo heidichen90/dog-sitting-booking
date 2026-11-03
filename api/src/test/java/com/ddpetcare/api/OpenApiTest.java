@@ -90,7 +90,7 @@ class OpenApiTest extends DatabaseTest {
     void everyResponseFieldIsRequired() throws Exception {
         String docs = apiDocs().andReturn().getResponse().getContentAsString();
         for (String name : List.of("BookingResponse", "StayResponse", "ClientSummary", "DogSummary",
-                "ClientResponse", "DogResponse", "FieldError", "ExistingClient")) {
+                "ClientResponse", "DogResponse", "FieldError", "ExistingClient", "MeResponse")) {
             Map<String, Object> properties = JsonPath.read(docs, "$.components.schemas." + name + ".properties");
             List<String> required = JsonPath.read(docs, "$.components.schemas." + name + ".required");
             assertThat(name, required, containsInAnyOrder(properties.keySet().toArray()));
@@ -138,5 +138,21 @@ class OpenApiTest extends DatabaseTest {
                 .andExpect(jsonPath(SCHEMAS + "StayRequest.properties.pickUpTime.pattern").value(TIME_PATTERN))
                 .andExpect(jsonPath(SCHEMAS + "StayResponse.properties.dropOffTime.pattern").value(TIME_PATTERN))
                 .andExpect(jsonPath(SCHEMAS + "StayResponse.properties.pickUpTime.pattern").value(TIME_PATTERN));
+    }
+
+    @Test
+    void documentsLoginAndMe() throws Exception {
+        apiDocs()
+                .andExpect(jsonPath("$.paths['/api/login'].post.operationId").value("login"))
+                .andExpect(jsonPath("$.paths['/api/login'].post.responses['204']").exists())
+                .andExpect(jsonPath("$.paths['/api/login'].post.responses['401'].content['application/problem+json']")
+                        .exists())
+                .andExpect(jsonPath("$.paths['/api/login'].post.responses['429'].content['application/problem+json']")
+                        .exists())
+                .andExpect(jsonPath("$.paths['/api/me'].get.operationId").value("getMe"))
+                .andExpect(jsonPath("$.paths['/api/me'].get.responses['200'].content['application/json'].schema['$ref']")
+                        .value("#/components/schemas/MeResponse"))
+                .andExpect(jsonPath(SCHEMAS + "LoginRequest.required", containsInAnyOrder("username", "password")))
+                .andExpect(jsonPath(SCHEMAS + "MeResponse.required", containsInAnyOrder("username")));
     }
 }

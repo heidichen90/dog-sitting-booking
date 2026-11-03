@@ -12,6 +12,9 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -38,6 +41,28 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         ProblemDetail problem = problem(HttpStatus.CONFLICT, "Phone already on file", ex.getMessage());
         problem.setProperty("existingClient", new ExistingClient(ex.getClientId(), ex.getClientName()));
         return problem;
+    }
+
+    @ExceptionHandler(BadCredentialsException.class)
+    ProblemDetail badCredentials() {
+        return problem(HttpStatus.UNAUTHORIZED, "Invalid username or password",
+                "Check the username and password and try again.");
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    ProblemDetail notLoggedIn() {
+        return problem(HttpStatus.UNAUTHORIZED, "Not logged in", "Log in to continue.");
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    ProblemDetail forbidden() {
+        return problem(HttpStatus.FORBIDDEN, "Forbidden", "The request was refused. Reload the page and try again.");
+    }
+
+    @ExceptionHandler(LoginThrottledException.class)
+    ProblemDetail loginThrottled() {
+        return problem(HttpStatus.TOO_MANY_REQUESTS, "Too many attempts, try again later",
+                "Login is paused for 15 minutes after 5 failed attempts.");
     }
 
     // A duplicate phone reaching the database means two creates raced past the service's check.
