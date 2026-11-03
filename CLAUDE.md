@@ -12,7 +12,7 @@ A dog-sitting booking app for a sole-trader business. Monorepo: `web/` (React fr
 - `api/` — Spring Boot REST API (Java), PostgreSQL + Flyway. Folder-specific rules: `api/CLAUDE.md`.
 - Deploys are independent per package:
   - Vercel deploys `web/` (root directory set to `web`).
-  - `api-deploy.yml` deploys `api/` to Cloud Run on pushes to `main` touching `api/**` (it also triggers on `feat/go-live` until the go-live merge removes that).
+  - `api-deploy.yml` deploys `api/` to Cloud Run on pushes to `main` touching `api/**`.
   - `web.yml` and `api.yml` (path-filtered) run the checks.
   - `db-backup.yml` takes a nightly encrypted backup to Cloud Storage.
   - Owner runbooks are in `docs/runbooks/`.

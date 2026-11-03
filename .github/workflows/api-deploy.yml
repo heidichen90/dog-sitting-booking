@@ -2,9 +2,7 @@ name: api-deploy
 
 on:
   push:
-    # feat/go-live is temporary: remove it (and its Workload Identity permission) before merging.
-    # See docs/runbooks/go-live.md, step 6.
-    branches: [main, feat/go-live]
+    branches: [main]
     paths: ['api/**']
   workflow_dispatch:
 
