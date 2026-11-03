@@ -11,3 +11,7 @@ spring:
 logging:
   level:
     org.hibernate.engine.internal.StatisticalLoggingSessionEventListener: WARN
+
+owner:
+  username: ddpetcare
+  password-hash: "{noop}test-password"

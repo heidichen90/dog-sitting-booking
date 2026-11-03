@@ -8,10 +8,11 @@ import java.util.Comparator;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 public record BookingResponse(
         Long id,
-        String status,
+        @Schema(allowableValues = {"confirmed", "cancelled"}) String status,
         String notes,
         Instant paidAt,
         Instant createdAt,
@@ -28,7 +29,7 @@ public record BookingResponse(
 
     public record StayResponse(
             Long id,
-            String service,
+            @Schema(allowableValues = {"day_care", "boarding"}) String service,
             LocalDate dropOffDate,
             @JsonFormat(pattern = "HH:mm") LocalTime dropOffTime,
             LocalDate pickUpDate,
@@ -36,7 +37,7 @@ public record BookingResponse(
             BigDecimal unitRate,
             BigDecimal pickupDropoffFee,
             BigDecimal price,
-            String status) {
+            @Schema(allowableValues = {"confirmed", "cancelled"}) String status) {
 
         static StayResponse from(BookingStay stay) {
             return new StayResponse(stay.getId(), stay.isDayCare() ? "day_care" : "boarding",

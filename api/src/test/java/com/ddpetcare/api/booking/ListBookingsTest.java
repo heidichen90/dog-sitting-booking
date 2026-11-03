@@ -22,7 +22,7 @@ class ListBookingsTest extends DatabaseTest {
         insertStay(newer, MON, MON.plusDays(2), "40.00", "0", "80.00");
         insertStay(newer, MON.plusDays(7), MON.plusDays(7), "35.00", "0", "35.00");
 
-        getJson("/bookings")
+        getJson("/api/bookings")
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2))
                 .andExpect(jsonPath("$[0].id").value(newer))
@@ -42,14 +42,14 @@ class ListBookingsTest extends DatabaseTest {
         jdbc.sql("UPDATE bookings SET created_at = '2026-01-02T00:00:00Z' WHERE id = ?").param(newest).update();
         jdbc.sql("UPDATE bookings SET created_at = '2026-01-01T00:00:00Z' WHERE id = ?").param(oldest).update();
 
-        getJson("/bookings")
+        getJson("/api/bookings")
                 .andExpect(jsonPath("$[0].id").value(newest))
                 .andExpect(jsonPath("$[1].id").value(oldest));
     }
 
     @Test
     void returnsEmptyListWhenNoBookings() throws Exception {
-        getJson("/bookings")
+        getJson("/api/bookings")
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(0));
     }
@@ -63,7 +63,7 @@ class ListBookingsTest extends DatabaseTest {
         jdbc.sql("UPDATE booking_stays SET drop_off_time = '09:00', pick_up_time = '17:30' WHERE id = ?")
                 .param(dayCare).update();
 
-        getJson("/bookings/" + booking)
+        getJson("/api/bookings/" + booking)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(booking))
                 .andExpect(jsonPath("$.stays[0].service").value("day_care"))
@@ -81,7 +81,7 @@ class ListBookingsTest extends DatabaseTest {
         long cancelled = insertStay(booking, MON.plusDays(1), MON.plusDays(1), "35.00", "0", "35.00");
         jdbc.sql("UPDATE booking_stays SET status = 'cancelled' WHERE id = ?").param(cancelled).update();
 
-        getJson("/bookings/" + booking)
+        getJson("/api/bookings/" + booking)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.total").value(35.0))
                 .andExpect(jsonPath("$.stays[1].status").value("cancelled"));
@@ -89,7 +89,7 @@ class ListBookingsTest extends DatabaseTest {
 
     @Test
     void unknownBookingIsNotFound() throws Exception {
-        getJson("/bookings/999999999")
+        getJson("/api/bookings/999999999")
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.detail").value("Booking 999999999 not found"));
     }

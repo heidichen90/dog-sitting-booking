@@ -1,15 +1,5 @@
 import { useState } from 'react'
-import {
-  Alert,
-  Box,
-  Button,
-  Chip,
-  Divider,
-  Paper,
-  Snackbar,
-  Stack,
-  Typography,
-} from '@mui/material'
+import { Alert, Box, Button, Chip, Divider, Paper, Snackbar, Stack, Typography } from '@mui/material'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import WhatsAppIcon from '@mui/icons-material/WhatsApp'
@@ -17,28 +7,26 @@ import CalendarMonthIcon from '@mui/icons-material/CalendarMonth'
 import PhoneIphoneIcon from '@mui/icons-material/PhoneIphone'
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutlined'
 import {
-  generateWhatsAppMessageMulti,
-  generateWhatsAppLink,
-  generateGCalLink,
+  SERVICE_COLOR,
+  SERVICE_LABEL,
   downloadICS,
   fmt,
+  generateGCalLink,
+  generateWhatsAppLink,
+  generateWhatsAppMessage,
 } from '../utils.ts'
 import type { Booking } from '../types'
 
-const SERVICE_COLOR: Record<string, 'warning' | 'success'> = {
-  Boarding: 'warning',
-  'Day Care': 'success',
-}
-
 interface ConfirmationProps {
-  bookings: Booking[]
+  booking: Booking
   onNewBooking: () => void
 }
 
-export default function Confirmation({ bookings, onNewBooking }: ConfirmationProps) {
+export default function Confirmation({ booking, onNewBooking }: ConfirmationProps) {
   const [copied, setCopied] = useState(false)
-  const msg = generateWhatsAppMessageMulti(bookings)
-  const total = bookings.reduce((sum, b) => sum + b.price, 0)
+  const msg = generateWhatsAppMessage(booking)
+  const { stays } = booking
+  const several = stays.length > 1
 
   function handleCopy() {
     navigator.clipboard.writeText(msg).then(() => setCopied(true))
@@ -46,26 +34,23 @@ export default function Confirmation({ bookings, onNewBooking }: ConfirmationPro
 
   return (
     <Box>
-      {/* Header */}
       <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 3 }}>
         <CheckCircleIcon color="success" fontSize="large" />
         <Typography variant="h6" sx={{ fontWeight: 700 }}>
-          {bookings.length === 1 ? 'Booking Confirmed!' : `${bookings.length} Bookings Confirmed!`}
+          Booking Confirmed!
         </Typography>
       </Stack>
 
-      {/* Booking summary */}
-      <Typography
-        variant="overline"
-        color="text.secondary"
-        sx={{ fontWeight: 700, display: 'block', mb: 1 }}
-      >
+      <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 700, display: 'block', mb: 1 }}>
         Summary
       </Typography>
+      <Typography variant="body1" sx={{ fontWeight: 700, mb: 1 }}>
+        🐕 {booking.dog.name} · 👤 {booking.client.name}
+      </Typography>
       <Stack spacing={1} sx={{ mb: 3 }}>
-        {bookings.map((b, i) => (
+        {stays.map((stay, i) => (
           <Stack
-            key={b.id}
+            key={stay.id}
             direction="row"
             sx={{
               justifyContent: 'space-between',
@@ -76,45 +61,35 @@ export default function Confirmation({ bookings, onNewBooking }: ConfirmationPro
             }}
           >
             <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-              {bookings.length > 1 && (
+              {several && (
                 <Typography variant="body2" color="text.secondary" sx={{ minWidth: 20 }}>
                   {i + 1}.
                 </Typography>
               )}
               <Box>
                 <Typography variant="body2">
-                  {fmt(b.dropOff, b.timesTbd)}
-                  {` → ${fmt(b.pickUp, b.timesTbd)}`}
+                  {fmt(stay.dropOffDate, stay.dropOffTime)}
+                  {` → ${fmt(stay.pickUpDate, stay.pickUpTime)}`}
                 </Typography>
               </Box>
-              <Chip label={b.service} size="small" color={SERVICE_COLOR[b.service] ?? 'default'} />
+              <Chip label={SERVICE_LABEL[stay.service]} size="small" color={SERVICE_COLOR[stay.service]} />
             </Stack>
             <Typography variant="body2" sx={{ fontWeight: 700 }}>
-              £{b.price.toFixed(2)}
+              £{stay.price.toFixed(2)}
             </Typography>
           </Stack>
         ))}
-        {bookings.length > 1 && (
-          <Stack direction="row" sx={{ justifyContent: 'flex-end' }}>
-            <Typography variant="subtitle1" color="primary" sx={{ fontWeight: 700 }}>
-              Total: £{total.toFixed(2)}
-            </Typography>
-          </Stack>
-        )}
+        <Stack direction="row" sx={{ justifyContent: 'flex-end' }}>
+          <Typography variant="subtitle1" color="primary" sx={{ fontWeight: 700 }}>
+            Total: £{booking.total.toFixed(2)}
+          </Typography>
+        </Stack>
       </Stack>
 
-      {/* WhatsApp message */}
-      <Typography
-        variant="overline"
-        color="text.secondary"
-        sx={{ fontWeight: 700, display: 'block', mb: 1 }}
-      >
+      <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 700, display: 'block', mb: 1 }}>
         WhatsApp Confirmation Message
       </Typography>
-      <Paper
-        variant="outlined"
-        sx={{ p: 2, mb: 1.5, bgcolor: '#f0faf4', borderColor: '#a5d6b7' }}
-      >
+      <Paper variant="outlined" sx={{ p: 2, mb: 1.5, bgcolor: '#f0faf4', borderColor: '#a5d6b7' }}>
         <Typography
           component="pre"
           sx={{
@@ -146,20 +121,15 @@ export default function Confirmation({ bookings, onNewBooking }: ConfirmationPro
         </Button>
       </Stack>
 
-      {/* Calendar — one set of buttons per booking */}
-      <Typography
-        variant="overline"
-        color="text.secondary"
-        sx={{ fontWeight: 700, display: 'block', mb: 1 }}
-      >
+      <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 700, display: 'block', mb: 1 }}>
         Add to Calendar
       </Typography>
       <Stack spacing={1.5} sx={{ mb: 4 }}>
-        {bookings.map((b, i) => (
-          <Box key={b.id}>
-            {bookings.length > 1 && (
+        {stays.map((stay, i) => (
+          <Box key={stay.id}>
+            {several && (
               <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
-                Booking {i + 1} — {fmt(b.dropOff, b.timesTbd)}
+                Day {i + 1} — {fmt(stay.dropOffDate, stay.dropOffTime)}
               </Typography>
             )}
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
@@ -167,7 +137,7 @@ export default function Confirmation({ bookings, onNewBooking }: ConfirmationPro
                 variant="contained"
                 startIcon={<CalendarMonthIcon />}
                 component="a"
-                href={generateGCalLink(b)}
+                href={generateGCalLink(booking, stay)}
                 target="_blank"
                 rel="noopener noreferrer"
                 size="small"
@@ -178,31 +148,25 @@ export default function Confirmation({ bookings, onNewBooking }: ConfirmationPro
               <Button
                 variant="contained"
                 startIcon={<PhoneIphoneIcon />}
-                onClick={() => downloadICS(b)}
+                onClick={() => downloadICS(booking, stay)}
                 size="small"
                 sx={{ bgcolor: '#6e4fc8', '&:hover': { bgcolor: '#5a3ab0' } }}
               >
                 Download .ics (iPhone)
               </Button>
             </Stack>
-            {i < bookings.length - 1 && <Divider sx={{ mt: 1.5 }} />}
+            {i < stays.length - 1 && <Divider sx={{ mt: 1.5 }} />}
           </Box>
         ))}
       </Stack>
 
-      {/* Start another booking */}
-      <Typography
-        variant="overline"
-        color="text.secondary"
-        sx={{ fontWeight: 700, display: 'block', mb: 1 }}
-      >
+      <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 700, display: 'block', mb: 1 }}>
         New Booking
       </Typography>
       <Button variant="outlined" startIcon={<AddCircleOutlineIcon />} onClick={onNewBooking}>
         New Booking
       </Button>
 
-      {/* "Copied to clipboard" toast */}
       <Snackbar
         open={copied}
         autoHideDuration={2500}

@@ -11,9 +11,35 @@ spring:
     open-in-view: false
     hibernate:
       ddl-auto: validate
+  session:
+    timeout: 30d
+    jdbc:
+      initialize-schema: never
+      # Hourly instead of the default every minute, so Neon's free compute can suspend when idle.
+      cleanup-cron: "0 0 * * * *"
+
+server:
+  servlet:
+    session:
+      cookie:
+        name: SESSION
+        http-only: true
+        same-site: lax
+        max-age: 30d
+        secure: false
+
+owner:
+  username: ${OWNER_USERNAME}
+  password-hash: ${OWNER_PASSWORD_HASH}
 
 management:
   endpoints:
     web:
       exposure:
         include: health
+
+springdoc:
+  api-docs:
+    version: openapi_3_1
+  default-produces-media-type: application/json
+  override-with-generic-response: false

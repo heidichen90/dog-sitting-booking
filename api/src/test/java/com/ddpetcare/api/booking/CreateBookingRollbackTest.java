@@ -21,7 +21,7 @@ class CreateBookingRollbackTest extends DatabaseTest {
 
     @Test
     void failureAfterCreatingClientLeavesNoRows() throws Exception {
-        postJson("/bookings", TestRequests.load("bookings/create-new-client-unknown-dog.json"))
+        postJson("/api/bookings", TestRequests.load("bookings/create-new-client-unknown-dog.json"))
                 .andExpect(status().isNotFound());
 
         assertThat(jdbc.sql("SELECT count(*) FROM clients WHERE phone = '+447700900999'")

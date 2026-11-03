@@ -24,11 +24,13 @@ Give `api/` the endpoints the frontend needs for what it does today with `localS
 
 | Method | Path | Purpose |
 |---|---|---|
-| `GET` | `/clients` | All clients with their dogs, sorted by name (feeds a picker) |
-| `POST` | `/bookings` | Create a booking with its stays. `201 Created`, `Location: /bookings/{id}`, body is the booking |
-| `GET` | `/bookings` | All bookings, newest first, cancelled included |
-| `GET` | `/bookings/{id}` | One booking |
-| `POST` | `/bookings/{id}/cancel` | Set the booking and all its stays to `cancelled` (so `total` becomes 0.00); returns it. Cancelling a cancelled booking returns it unchanged |
+| `GET` | `/api/clients` | All clients with their dogs, sorted by name (feeds a picker) |
+| `POST` | `/api/bookings` | Create a booking with its stays. `201 Created`, `Location: /api/bookings/{id}`, body is the booking |
+| `GET` | `/api/bookings` | All bookings, newest first, cancelled included |
+| `GET` | `/api/bookings/{id}` | One booking |
+| `POST` | `/api/bookings/{id}/cancel` | Set the booking and all its stays to `cancelled` (so `total` becomes 0.00); returns it. Cancelling a cancelled booking returns it unchanged |
+
+Paths moved under `/api` in the web switch-over (`2026-10-31-web-api-switch-design.md`).
 
 ### Create request
 
@@ -70,7 +72,7 @@ Give `api/` the endpoints the frontend needs for what it does today with `localS
 - `total` is the sum of `price` over confirmed stays, computed on read.
 - `service` is derived: `day_care` when drop-off and pick-up are on the same date, otherwise `boarding`.
 
-### `GET /clients` response
+### `GET /api/clients` response
 
 ```json
 [ { "id": 3, "name": "Sarah Lee", "phone": "+447700900123",
@@ -131,7 +133,7 @@ A malformed or mistyped body returns the same "Invalid request" title, with a ge
 
 | Entity | Maps | Relations |
 |---|---|---|
-| `Client` | `clients` | has many `Dog` (used by `GET /clients`) |
+| `Client` | `clients` | has many `Dog` (used by `GET /api/clients`) |
 | `Dog` | `dogs` | belongs to `Client` |
 | `Booking` | `bookings` | belongs to `Client` and `Dog`; owns its `BookingStay` list (saved with the booking) |
 | `BookingStay` | `booking_stays` | belongs to `Booking` |
@@ -152,7 +154,7 @@ If any step fails, nothing is saved. A concurrent create with the same new phone
 
 ### Reads
 
-`GET /bookings` and `GET /bookings/{id}` load bookings with their client, dog and stays in a fixed number of queries regardless of how many bookings exist (no N+1).
+`GET /api/bookings` and `GET /api/bookings/{id}` load bookings with their client, dog and stays in a fixed number of queries regardless of how many bookings exist (no N+1).
 
 ## Validation placement
 
@@ -178,7 +180,7 @@ api/src/test/java/com/ddpetcare/api/
     CreateBookingValidationTest.java   400 cases
     ClientAndDogResolutionTest.java    existing/new client and dog, dog reuse, 404s, 409
     CreateBookingRollbackTest.java     a failed create leaves no rows behind
-    ListBookingsTest.java              GET /bookings and /bookings/{id}, total, ordering
+    ListBookingsTest.java              GET /api/bookings and /api/bookings/{id}, total, ordering
     CancelBookingTest.java             cancel (cascades to stays), cancel twice, updated_at changes
     BookingQueryCountTest.java         same query count for 1 and 5 bookings
   client/
@@ -217,7 +219,7 @@ Ids that tests create at run time are written as placeholders (`{{clientId}}`, `
 
 ## Future to-dos
 
-- **OpenAPI precision before generating TypeScript types** (first step of the frontend plan): mark response fields required/nullable, give `status` and `service` enum values, document `POST /bookings` as 201 with `Location`, document the 400/404/409 ProblemDetail shapes, and set readable operationIds.
+- **OpenAPI precision:** done in the web switch-over (springdoc annotations plus `OpenApiSchemaCustomizer`; asserted by `OpenApiTest`).
 
 - **Auth vs the catch-all 500 handler.** When Spring Security is added, make sure `AccessDeniedException` and `AuthenticationException` aren't turned into 500s by the catch-all `@ExceptionHandler(Exception.class)`. Rethrow them or give them their own handlers, so they stay 403/401.
 

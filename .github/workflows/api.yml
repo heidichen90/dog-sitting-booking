@@ -6,6 +6,7 @@ on:
     paths: ['api/**']
   pull_request:
     paths: ['api/**']
+  workflow_call:
 
 jobs:
   build:
