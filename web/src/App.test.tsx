@@ -56,6 +56,16 @@ describe('App', () => {
     expect(await screen.findByRole('tab', { name: 'History (1)' })).toBeTruthy()
   })
 
+  it('shows every stay in the Dashboard tab', async () => {
+    serveMe()
+    serveLists(() => [booking, cancelledBooking])
+    render(<App />, { wrapper: Providers })
+
+    await userEvent.setup().click(await screen.findByRole('tab', { name: 'Dashboard' }))
+
+    await waitFor(() => expect(screen.getAllByRole('gridcell', { name: /^(Biscuit|Rex)$/ })).toHaveLength(3))
+  })
+
   it('shows the confirmation from the API response, then refreshes the lists', async () => {
     let loads = 0
     serveMe()

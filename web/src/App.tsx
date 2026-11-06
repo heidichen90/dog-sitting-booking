@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type SyntheticEvent } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useRef, useState, type SyntheticEvent } from 'react'
 import {
   Alert,
   AppBar,
@@ -19,6 +19,9 @@ import BookingHistory from './components/BookingHistory.tsx'
 import LoginPage from './components/LoginPage.tsx'
 import { ApiError, cancelBooking, hasSessionEnded, listBookings, listClients, logout, me } from './api/client.ts'
 import type { Booking, Client } from './types'
+
+// Loaded on first open, so the grid library isn't downloaded with the rest of the site.
+const Dashboard = lazy(() => import('./components/Dashboard.tsx'))
 
 type Session = 'checking' | 'loggedOut' | 'loggedIn'
 
@@ -181,13 +184,14 @@ export default function App() {
             <Tabs value={tab} onChange={(_: SyntheticEvent, v: number) => setTab(v)}>
               <Tab label="New Booking" />
               <Tab label={`History (${confirmedCount})`} />
+              <Tab label="Dashboard" />
             </Tabs>
           </Container>
         </Box>
       )}
 
       <Box sx={{ bgcolor: 'background.default', minHeight: 'calc(100vh - 112px)' }}>
-        <Container maxWidth="sm" sx={{ py: 3 }}>
+        <Container maxWidth={tab === 2 ? 'xl' : 'sm'} sx={{ py: 3 }}>
           {error && (
             <Alert
               severity="error"
@@ -233,6 +237,12 @@ export default function App() {
           )}
 
           {loaded && tab === 1 && <BookingHistory bookings={bookings} onCancel={handleCancel} />}
+
+          {loaded && tab === 2 && (
+            <Suspense fallback={<CircularProgress aria-label="Loading" />}>
+              <Dashboard bookings={bookings} />
+            </Suspense>
+          )}
         </Container>
       </Box>
     </>
