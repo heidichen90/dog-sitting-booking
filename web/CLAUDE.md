@@ -4,7 +4,7 @@ Folder-specific rules for the React frontend. Shared project rules live in the r
 
 ## Stack
 
-- React 19 + Vite, MUI v9, dayjs — TypeScript, `strict: true` (see `tsconfig.json`)
+- React 19 + Vite, MUI v9, dayjs, AG Grid Community 36.2.0 (pinned exactly; Dashboard tab only) — TypeScript, `strict: true` (see `tsconfig.json`)
 - **TypeScript version:** pinned to `5.9.3`, not latest (`7.x`) — `typescript-eslint` doesn't support TS 7 yet. Re-check this pin before bumping TypeScript.
 - **Deployed:** Vercel, root directory `web/`, auto-deploys on push to `main`. `web/vercel.json` rewrites `/api/:path*` to the Cloud Run API, so the browser stays on one origin.
 - **⚠️ Don't merge `feat/web-api` (the API-backed website) into `main` yet.** Merging to `main` goes through `docs/runbooks/go-live.md` (owner only): the API is hosted and the owner starts fresh, so the old localStorage bookings aren't migrated. Its PR stays a draft until the runbook's merge step.
@@ -43,3 +43,4 @@ Folder-specific rules for the React frontend. Shared project rules live in the r
 - No jest-dom: assert with `getBy*`/`queryBy*`, `toBeTruthy()`, `toBeNull()` and input `.value`.
 - After closing a `Dialog`, wait until it's gone (`queryByRole('dialog', { hidden: true })` is null) before querying the page; while it fades out, the rest of the page is aria-hidden.
 - Sample API data lives in `src/test/fixtures.ts`.
+- AG Grid renders under jsdom. Its own `exportDataAsCsv` download crashes there, so `Dashboard` exports with `getDataAsCsv()` + `downloadFile` and its test mocks `downloadFile`. Close an open MUI `Menu` before querying the grid: while it's open the rest of the page is aria-hidden.

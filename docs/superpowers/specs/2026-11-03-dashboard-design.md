@@ -57,14 +57,15 @@ Sorting uses the underlying values (dates and times, numbers), not the display t
 
 - A third tab, **Dashboard**, after History.
 - On the Dashboard tab only, the page container widens from `sm` to `xl`; New Booking and History stay narrow.
-- Above the grid: a quick search box (searches all columns) and an **Export CSV** button.
-- The grid fills the width and about 70% of the viewport height. Column menus hold sort, filter and show/hide; columns reorder by dragging their headers.
+- Above the grid: a quick search box (searches all columns), a **Columns** menu with a tick box per column to show or hide it (AG Grid Community has no built-in column chooser), and an **Export CSV** button.
+- The grid fills the width and is 70% of the viewport tall. Click a header to sort, shift-click to sort by more than one column; the header menu holds the filter; drag headers to reorder.
+- The Dashboard code (and AG Grid) loads the first time the tab opens, so the rest of the site downloads no more than before.
 - Theme: AG Grid's Quartz theme with the app's primary colour and font set through its theme parameters.
 - No bookings: the same "No bookings yet" empty state as History.
 
 ## CSV export
 
-- AG Grid's built-in `exportDataAsCsv`, which exports the rows as currently filtered and sorted, and the visible columns in their current order.
+- The grid's `getDataAsCsv()` gives the rows as currently searched, filtered and sorted, with the visible columns in their current order. The site downloads it itself (`downloadFile`, shared with the calendar download), starting with a UTF-8 byte-order mark so Excel reads names correctly.
 - Values are plain so a spreadsheet can calculate with them: Drop-off and Pick-up as `YYYY-MM-DD HH:mm` (`YYYY-MM-DD` when the time is TBD), Booked on as `YYYY-MM-DD`, money as numbers without `£`, Paid as `Yes`/`No`.
 - File name: `dd-pet-care-stays-YYYY-MM-DD.csv` (today's date).
 
