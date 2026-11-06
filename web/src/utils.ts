@@ -274,14 +274,18 @@ export function buildICS(booking: Booking, stay: Stay, now: Dayjs = dayjs()): st
   ].join("\r\n");
 }
 
-export function downloadICS(booking: Booking, stay: Stay): void {
-  const blob = new Blob([buildICS(booking, stay)], { type: "text/calendar;charset=utf-8" });
+export function downloadFile(blob: Blob, fileName: string): void {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `${booking.dog.name.toLowerCase().replace(/\s+/g, "-")}-sitting.ics`;
+  a.download = fileName;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+export function downloadICS(booking: Booking, stay: Stay): void {
+  const blob = new Blob([buildICS(booking, stay)], { type: "text/calendar;charset=utf-8" });
+  downloadFile(blob, `${booking.dog.name.toLowerCase().replace(/\s+/g, "-")}-sitting.ics`);
 }

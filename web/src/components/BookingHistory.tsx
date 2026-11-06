@@ -13,8 +13,8 @@ import {
   Stack,
   Typography,
 } from '@mui/material'
-import PetsIcon from '@mui/icons-material/Pets'
 import dayjs from 'dayjs'
+import NoBookings from './NoBookings.tsx'
 import { SERVICE_COLOR, SERVICE_LABEL, fmt } from '../utils.ts'
 import type { Booking } from '../types'
 
@@ -27,13 +27,7 @@ export default function BookingHistory({ bookings, onCancel }: BookingHistoryPro
   const [pending, setPending] = useState<Booking | null>(null)
 
   if (!bookings.length) {
-    return (
-      <Box sx={{ textAlign: 'center', py: 10, color: 'text.disabled' }}>
-        <PetsIcon sx={{ fontSize: 64, mb: 1 }} />
-        <Typography variant="h6">No bookings yet</Typography>
-        <Typography variant="body2">Create your first booking to get started.</Typography>
-      </Box>
-    )
+    return <NoBookings />
   }
 
   return (
