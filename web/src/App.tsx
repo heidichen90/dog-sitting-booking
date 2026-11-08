@@ -16,6 +16,7 @@ import PetsIcon from '@mui/icons-material/Pets'
 import BookingForm from './components/BookingForm.tsx'
 import Confirmation from './components/Confirmation.tsx'
 import BookingHistory from './components/BookingHistory.tsx'
+import DashboardErrorBoundary from './components/DashboardErrorBoundary.tsx'
 import LoginPage from './components/LoginPage.tsx'
 import { ApiError, cancelBooking, hasSessionEnded, listBookings, listClients, logout, me } from './api/client.ts'
 import type { Booking, Client } from './types'
@@ -239,9 +240,11 @@ export default function App() {
           {loaded && tab === 1 && <BookingHistory bookings={bookings} onCancel={handleCancel} />}
 
           {loaded && tab === 2 && (
-            <Suspense fallback={<CircularProgress aria-label="Loading" />}>
-              <Dashboard bookings={bookings} />
-            </Suspense>
+            <DashboardErrorBoundary>
+              <Suspense fallback={<CircularProgress aria-label="Loading" />}>
+                <Dashboard bookings={bookings} />
+              </Suspense>
+            </DashboardErrorBoundary>
           )}
         </Container>
       </Box>
