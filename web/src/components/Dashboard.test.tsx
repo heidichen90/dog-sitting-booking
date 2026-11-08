@@ -95,6 +95,40 @@ describe('Dashboard', () => {
     )
   })
 
+  it('searches the text the grid shows: prices with £ and booked-on dates by month', async () => {
+    const user = userEvent.setup()
+    render(<Dashboard bookings={[booking, cancelledBooking]} />)
+    await waitFor(() => expect(screen.getByText('Rex')).toBeTruthy())
+    const search = screen.getByRole('textbox', { name: 'Search' })
+
+    await user.type(search, '£95')
+    await waitFor(() => expect(screen.queryByText('Rex')).toBeNull())
+    expect(rowWith('Sat, 2 Nov 2030 at 9:00 AM')).toBeTruthy()
+    expect(rowWith('Sun, 10 Nov 2030 at 8:30 AM')).toBeUndefined()
+
+    await user.clear(search)
+    await user.type(search, 'Oct')
+    await waitFor(() => expect(screen.getByText('Rex')).toBeTruthy())
+    expect(rowWith('Sat, 2 Nov 2030 at 9:00 AM')).toBeTruthy()
+  })
+
+  it('keeps the sort and column order the owner chose when the page re-renders', async () => {
+    const user = userEvent.setup()
+    render(<Dashboard bookings={[booking, cancelledBooking]} />)
+    const header = (name: RegExp) => screen.getByRole('columnheader', { name })
+    await waitFor(() => expect(header(/Drop-off/).getAttribute('aria-sort')).toBe('ascending'))
+
+    await user.click(screen.getByText('Client'))
+    await waitFor(() => expect(header(/Client/).getAttribute('aria-sort')).toBe('ascending'))
+    expect(header(/Drop-off/).getAttribute('aria-sort')).not.toBe('ascending')
+
+    await user.type(screen.getByRole('textbox', { name: 'Search' }), '2030')
+
+    await waitFor(() => expect(screen.getByRole('textbox', { name: 'Search' })).toHaveProperty('value', '2030'))
+    expect(header(/Client/).getAttribute('aria-sort')).toBe('ascending')
+    expect(header(/Drop-off/).getAttribute('aria-sort')).not.toBe('ascending')
+  })
+
   it('shows the empty state with no bookings', () => {
     render(<Dashboard bookings={[]} />)
 

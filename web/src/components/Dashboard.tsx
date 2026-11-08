@@ -16,7 +16,7 @@ import {
   themeQuartz,
 } from 'ag-grid-community'
 import NoBookings from './NoBookings.tsx'
-import { COLUMNS, csvFileName, toStayRows, type StayRow } from '../dashboard.ts'
+import { COLUMNS, DEFAULT_COL_DEF, csvFileName, toStayRows, type StayRow } from '../dashboard.ts'
 import { downloadFile } from '../utils.ts'
 import type { Booking } from '../types'
 
@@ -100,7 +100,8 @@ export default function Dashboard({ bookings }: DashboardProps) {
           theme={theme}
           rowData={rows}
           columnDefs={COLUMNS}
-          defaultColDef={{ sortable: true, resizable: true, useValueFormatterForExport: false }}
+          defaultColDef={DEFAULT_COL_DEF}
+          suppressDragLeaveHidesColumns
           getRowId={({ data }) => String(data.stayId)}
           quickFilterText={search}
         />

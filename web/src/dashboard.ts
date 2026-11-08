@@ -1,5 +1,5 @@
 import dayjs from 'dayjs'
-import type { ColDef, ValueFormatterParams } from 'ag-grid-community'
+import type { ColDef } from 'ag-grid-community'
 import { SERVICE_LABEL, fmt } from './utils.ts'
 import type { Booking } from './types'
 
@@ -77,10 +77,15 @@ const dateTimeColumn: ColDef<StayRow> = {
   getQuickFilterText: dateTimeLabel,
 }
 
+const moneyLabel = ({ value }: { value?: number | null }) => (value == null ? '' : formatMoney(value))
+
 const moneyColumn: ColDef<StayRow> = {
   filter: 'agNumberColumnFilter',
-  valueFormatter: ({ value }: ValueFormatterParams<StayRow, number>) => (value == null ? '' : formatMoney(value)),
+  valueFormatter: moneyLabel,
+  getQuickFilterText: moneyLabel,
 }
+
+const bookedOnLabel = ({ value }: { value?: string | null }) => (value ? dayjs(value).format('D MMM YYYY') : '')
 
 export const COLUMNS: ColDef<StayRow>[] = [
   { field: 'bookingId', headerName: 'Booking #', filter: 'agNumberColumnFilter', width: 120 },
@@ -100,11 +105,14 @@ export const COLUMNS: ColDef<StayRow>[] = [
     headerName: 'Booked on',
     filter: 'agDateColumnFilter',
     filterParams: { comparator: compareDay },
-    valueFormatter: ({ value }) => (value ? dayjs(value).format('D MMM YYYY') : ''),
+    valueFormatter: bookedOnLabel,
+    getQuickFilterText: bookedOnLabel,
     width: 140,
   },
   { field: 'notes', headerName: 'Notes', filter: 'agTextColumnFilter', minWidth: 200, flex: 1 },
 ]
+
+export const DEFAULT_COL_DEF: ColDef<StayRow> = { sortable: true, resizable: true, useValueFormatterForExport: false }
 
 export function csvFileName(today: dayjs.Dayjs = dayjs()): string {
   return `dd-pet-care-stays-${today.format('YYYY-MM-DD')}.csv`
